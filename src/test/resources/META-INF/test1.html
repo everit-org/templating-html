@@ -1,0 +1,32 @@
+<html>
+<head>
+</head>
+<body>
+  <table data-ewt-bookmark="XYTable" data-ewt-attr="['id' : myId + 'myTable']">
+    <tr data-ewt-each="['myVar' : config.rows]"
+        data-ewt-var="['rowId' : portlet.id + myVar.userId]"
+        data-ewt-attr="['id' : rowId]">
+      <td><span data-ewt-content="user.firstName">John</span></td>
+      <td><span data-ewt-content="user.lastName">Doe</span></td>
+      <td></td>
+      <td>
+        <button
+          data-ewt-attr="['text' : loc.add,
+                          'onclick' : myId + 'reRender(rowId)']"></button>
+      </td>
+    </tr>
+    <tr>
+      <td><span style="color: red;">fff<a href="aaa"><span> 
+  </table>
+  <!--[if IE 8]>
+<p>Welcome to Internet Explorer 8.</p>
+<![endif]-->
+
+  <script type="text/ewt-javascript" data-ewt-parse="true" data-ewt-attr="['type' : 'text/javascript']">
+    @{myId + 'reRender'}(rowId) {
+      
+      ewt.reRender();
+    } 
+  </script>
+</body>
+</html>
