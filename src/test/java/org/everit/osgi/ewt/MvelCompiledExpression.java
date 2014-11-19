@@ -14,27 +14,25 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Everit - Web Templating.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.everit.osgi.ewt.internal;
+package org.everit.osgi.ewt;
 
+import java.io.Serializable;
 import java.util.Map;
 
-import org.everit.osgi.ewt.internal.templates.CompiledTemplate;
+import org.everit.osgi.ewt.el.CompiledExpression;
+import org.mvel2.MVEL;
 
-public class TextNode implements EWTNode {
+public class MvelCompiledExpression implements CompiledExpression {
 
-    private final CompiledTemplate compiledTemplate;
-    private final boolean parse;
-    private final String text;
+    private final Serializable mvelExpression;
 
-    public TextNode(String text, boolean parse) {
-        this.text = text;
-        this.parse = parse;
-        this.compiledTemplate = null;
+    public MvelCompiledExpression(Serializable mvelExpression) {
+        this.mvelExpression = mvelExpression;
     }
 
     @Override
-    public void render(StringBuilder sb, Map<String, Object> context) {
-        sb.append(text);
+    public Object eval(Map<String, Object> vars) {
+        return MVEL.executeExpression(mvelExpression, vars);
     }
 
 }

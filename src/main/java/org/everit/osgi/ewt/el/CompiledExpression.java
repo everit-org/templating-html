@@ -14,27 +14,11 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Everit - Web Templating.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.everit.osgi.ewt.internal;
+package org.everit.osgi.ewt.el;
 
 import java.util.Map;
 
-import org.everit.osgi.ewt.internal.templates.CompiledTemplate;
+public interface CompiledExpression {
 
-public class TextNode implements EWTNode {
-
-    private final CompiledTemplate compiledTemplate;
-    private final boolean parse;
-    private final String text;
-
-    public TextNode(String text, boolean parse) {
-        this.text = text;
-        this.parse = parse;
-        this.compiledTemplate = null;
-    }
-
-    @Override
-    public void render(StringBuilder sb, Map<String, Object> context) {
-        sb.append(text);
-    }
-
+    Object eval(Map<String, Object> vars);
 }

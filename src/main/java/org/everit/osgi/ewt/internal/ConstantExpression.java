@@ -18,23 +18,19 @@ package org.everit.osgi.ewt.internal;
 
 import java.util.Map;
 
-import org.everit.osgi.ewt.internal.templates.CompiledTemplate;
+import org.everit.osgi.ewt.el.CompiledExpression;
 
-public class TextNode implements EWTNode {
+public class ConstantExpression implements CompiledExpression {
 
-    private final CompiledTemplate compiledTemplate;
-    private final boolean parse;
-    private final String text;
+    private final Object value;
 
-    public TextNode(String text, boolean parse) {
-        this.text = text;
-        this.parse = parse;
-        this.compiledTemplate = null;
+    public ConstantExpression(Object value) {
+        this.value = value;
     }
 
     @Override
-    public void render(StringBuilder sb, Map<String, Object> context) {
-        sb.append(text);
+    public Object eval(Map<String, Object> vars) {
+        return value;
     }
 
 }
