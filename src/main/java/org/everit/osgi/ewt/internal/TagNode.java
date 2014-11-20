@@ -20,35 +20,161 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.everit.osgi.ewt.el.CompiledExpression;
+import org.htmlparser.Tag;
+import org.htmlparser.lexer.PageAttribute;
 
-public class TagNode implements EWTNode {
+public class TagNode extends ParentNode {
 
     private final Map<String, CompiledExpression> attributeAppendExpressions = new LinkedHashMap<String, CompiledExpression>();
 
     private CompiledExpression attributeAppendMapExpression;
+
+    private final Map<String, CompiledExpression> attributeExpressions = new LinkedHashMap<String, CompiledExpression>();
     private CompiledExpression attributeMapExpression;
     private final Map<String, CompiledExpression> attributePrependExpressions = new LinkedHashMap<String, CompiledExpression>();
 
     private CompiledExpression attributePrependMapExpression;
 
-    private final Map<String, CompiledExpression> attributeExpressions = new LinkedHashMap<String, CompiledExpression>();
+    private Tag endTag = null;
 
-    private final List<EWTNode> children = new ArrayList<EWTNode>();
+    private boolean escapeText = false;
 
-    private CompiledExpression foreachExpression = null;
+    private CompiledExpressionHolder foreachExpressionHolder = null;
+
+    private final List<PageAttribute> pageAttributes = new ArrayList<PageAttribute>();
 
     /**
      * Defaults to all.
      */
-    private CompiledExpression renderExpression = null;
+    private CompiledExpressionHolder renderExpressionHolder = null;
 
-    private CompiledExpression textExpression = null;
+    private CompiledExpressionHolder textExpressionHolder = null;
 
-    private boolean unescapeText = false;
+    private CompiledExpressionHolder varExpressionHolder = null;
 
-    private CompiledExpression varExpression = null;
+    private String escape(String textString) {
+        StringBuilder sb = new StringBuilder(textString.length());
+        for (int i = 0, n = textString.length(); i < n; i++) {
+            char charAt = textString.charAt(i);
+            switch (charAt) {
+            case '&':
+                sb.append("&amp;");
+                break;
+            case '\'':
+                sb.append("&apos;");
+                break;
+            case '"':
+                sb.append("&quot;");
+                break;
+            case '<':
+                sb.append("&lt;");
+                break;
+            case '>':
+                sb.append("&gt;");
+                break;
+            default:
+                sb.append(charAt);
+                break;
+            }
+        }
+        return null;
+    }
+
+    private <R> R evaluateExpression(CompiledExpressionHolder expressionHolder, Map<String, Object> vars,
+            Class<R> clazz) {
+        if (expressionHolder == null) {
+            return null;
+        }
+        try {
+            Object result = expressionHolder.getCompiledExpression().eval(vars);
+            if (result == null) {
+                return null;
+            }
+
+            if (!clazz.isAssignableFrom(result.getClass())) {
+                // TODO throw nice exception
+            }
+
+            @SuppressWarnings("unchecked")
+            R typedResult = (R) result;
+            return typedResult;
+        } catch (RuntimeException e) {
+            // TODO write out nice exception
+        }
+        return null;
+    }
+
+    private Entry<String, Iterable<?>> evaluateForeach(Map<String, Object> vars) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    private RenderScope evaluateRender(Map<String, Object> vars) {
+        String renderString = evaluateExpression(renderExpressionHolder, vars, String.class);
+        if (renderString == null || renderString.equalsIgnoreCase(RenderScope.ALL.toString())) {
+            return RenderScope.ALL;
+        }
+        if (renderString.equalsIgnoreCase(RenderScope.NONE.toString())) {
+            return RenderScope.NONE;
+        }
+        if (renderString.equalsIgnoreCase(RenderScope.BODY.toString())) {
+            return RenderScope.BODY;
+        }
+        if (renderString.equalsIgnoreCase(RenderScope.TAG.toString())) {
+            return RenderScope.TAG;
+        }
+        // TODO throw exception
+        return null;
+    }
+
+    private Map<String, Object> evaluateTagVariables(Map<String, Object> vars) {
+        if (varExpressionHolder == null) {
+            return null;
+        }
+        CompiledExpression compiledExpression = varExpressionHolder.getCompiledExpression();
+        Object result = compiledExpression.eval(vars);
+        if (result == null) {
+            return null;
+        }
+        if (!(result instanceof Map)) {
+            // TODO throw nice exception
+        }
+        @SuppressWarnings("unchecked")
+        Map<Object, Object> tagVarMap = (Map<Object, Object>) result;
+
+        for (Object key : tagVarMap.keySet()) {
+            if (key == null || !(key instanceof String)) {
+                // TODO throw nice error
+            }
+        }
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> mapResult = (Map<String, Object>) result;
+        return mapResult;
+    }
+
+    private String evaluateText(StringBuilder sb, Map<String, Object> vars) {
+        if (textExpressionHolder == null) {
+            return null;
+        } else {
+            try {
+                Object text = textExpressionHolder.getCompiledExpression().eval(vars);
+                if (text == null) {
+                    return "";
+                }
+                String textString = text.toString();
+                if (escapeText) {
+                    textString = escape(textString);
+                }
+                return textString;
+            } catch (RuntimeException e) {
+                // TODO throw nice exception
+            }
+        }
+    }
 
     public Map<String, CompiledExpression> getAttributeAppendExpressions() {
         return attributeAppendExpressions;
@@ -56,6 +182,10 @@ public class TagNode implements EWTNode {
 
     public CompiledExpression getAttributeAppendMapExpression() {
         return attributeAppendMapExpression;
+    }
+
+    public Map<String, CompiledExpression> getAttributeExpressions() {
+        return attributeExpressions;
     }
 
     public CompiledExpression getAttributeMapExpression() {
@@ -70,37 +200,82 @@ public class TagNode implements EWTNode {
         return attributePrependMapExpression;
     }
 
-    public Map<String, CompiledExpression> getAttributeExpressions() {
-        return attributeExpressions;
+    public CompiledExpressionHolder getForeachExpressionHolder() {
+        return foreachExpressionHolder;
     }
 
-    public List<EWTNode> getChildren() {
-        return children;
+    public List<PageAttribute> getPageAttributes() {
+        return pageAttributes;
     }
 
-    public CompiledExpression getForeachExpression() {
-        return foreachExpression;
+    public CompiledExpressionHolder getRenderExpressionHolder() {
+        return renderExpressionHolder;
     }
 
-    public CompiledExpression getRenderExpression() {
-        return renderExpression;
+    public CompiledExpressionHolder getTextExpressionHolder() {
+        return textExpressionHolder;
     }
 
-    public CompiledExpression getTextExpression() {
-        return textExpression;
+    public CompiledExpressionHolder getVarExpressionHolder() {
+        return varExpressionHolder;
     }
 
-    public CompiledExpression getVarExpression() {
-        return varExpression;
-    }
-
-    public boolean isUnescapeText() {
-        return unescapeText;
+    public boolean isEscapeText() {
+        return escapeText;
     }
 
     @Override
-    public void render(StringBuilder sb, Map<String, Object> context) {
-        // TODO Auto-generated method stub
+    public void render(StringBuilder sb, Map<String, Object> vars) {
+        Entry<String, Iterable<?>> foreachEntry = evaluateForeach(vars);
+
+        if (foreachEntry == null || foreachEntry.getValue() == null) {
+            if (foreachExpressionHolder != null) {
+                // Can happen if the user returns null in forech expression
+                return;
+            }
+
+            Map<String, Object> tagVars = evaluateTagVariables(vars);
+
+            Map<String, Object> scopedVars = vars;
+            if (tagVars != null && tagVars.size() > 0) {
+                scopedVars = new InheritantMap<String, Object>(vars);
+                scopedVars.putAll(tagVars);
+            }
+            renderItem(sb, scopedVars);
+        } else {
+            Iterable<?> iterable = foreachEntry.getValue();
+            String key = foreachEntry.getKey();
+            for (Object element : iterable) {
+                Map<String, Object> scopedVars = new InheritantMap<String, Object>(vars);
+                scopedVars.put(key, element);
+                Map<String, Object> tagVars = evaluateTagVariables(scopedVars);
+                if (tagVars != null) {
+                    scopedVars.putAll(tagVars);
+                }
+                renderItem(sb, scopedVars);
+            }
+        }
+    }
+
+    private void renderItem(StringBuilder sb, Map<String, Object> vars) {
+        RenderScope render = evaluateRender(vars);
+        if (render == RenderScope.NONE) {
+            return;
+        }
+
+        if (render == RenderScope.ALL || render == RenderScope.TAG) {
+            sb.append('<');
+            for (PageAttribute pageAttribute : pageAttributes) {
+                // TODO render attributes
+            }
+
+            // TODO if there is a body, render it, otherwise close the tag if it is self-closed or render the endTag
+            // renderBody(sb, vars);
+        } else {
+            evaluateText(sb, vars);
+        }
+
+        // TODO
 
     }
 
@@ -116,24 +291,28 @@ public class TagNode implements EWTNode {
         this.attributePrependMapExpression = attributePrependMapExpression;
     }
 
-    public void setForeachExpression(CompiledExpression foreachExpression) {
-        this.foreachExpression = foreachExpression;
+    public void setEndTag(Tag endTag) {
+        this.endTag = endTag;
     }
 
-    public void setRenderExpression(CompiledExpression renderExpression) {
-        this.renderExpression = renderExpression;
+    public void setEscapeText(boolean unescapeText) {
+        this.escapeText = unescapeText;
     }
 
-    public void setTextExpression(CompiledExpression textExpression) {
-        this.textExpression = textExpression;
+    public void setForeachExpressionHolder(CompiledExpressionHolder foreachExpressionHolder) {
+        this.foreachExpressionHolder = foreachExpressionHolder;
     }
 
-    public void setUnescapeText(boolean unescapeText) {
-        this.unescapeText = unescapeText;
+    public void setRenderExpressionHolder(CompiledExpressionHolder renderExpressionHolder) {
+        this.renderExpressionHolder = renderExpressionHolder;
     }
 
-    public void setVarExpression(CompiledExpression varExpression) {
-        this.varExpression = varExpression;
+    public void setTextExpressionHolder(CompiledExpressionHolder textExpressionHolder) {
+        this.textExpressionHolder = textExpressionHolder;
+    }
+
+    public void setVarExpressionHolder(CompiledExpressionHolder varExpressionHolder) {
+        this.varExpressionHolder = varExpressionHolder;
     }
 
 }

@@ -16,10 +16,27 @@
  */
 package org.everit.osgi.ewt.internal;
 
-import java.util.Map;
+import org.everit.osgi.ewt.el.CompiledExpression;
+import org.htmlparser.lexer.PageAttribute;
 
-public interface EWTNode {
+public class CompiledExpressionHolder {
 
-    void render(StringBuilder sb, Map<String, Object> vars);
+    private final CompiledExpression compiledExpression;
+
+    private final PageAttribute pageAttribute;
+
+    public CompiledExpressionHolder(CompiledExpression compiledExpression, PageAttribute pageAttribute) {
+        super();
+        this.compiledExpression = compiledExpression;
+        this.pageAttribute = pageAttribute;
+    }
+
+    public CompiledExpression getCompiledExpression() {
+        return compiledExpression;
+    }
+
+    public PageAttribute getPageAttribute() {
+        return pageAttribute;
+    }
 
 }

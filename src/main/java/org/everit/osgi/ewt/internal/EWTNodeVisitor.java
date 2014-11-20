@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
-import org.everit.osgi.ewt.el.CompiledExpression;
 import org.everit.osgi.ewt.el.ExpressionCompiler;
 import org.htmlparser.Remark;
 import org.htmlparser.Tag;
@@ -36,49 +35,56 @@ public class EWTNodeVisitor extends NodeVisitor {
 
     private final ExpressionCompiler expressionCompiler;
 
+    private final ParentNode parentNode;
+
+    private final ParentNode rootNode;
+
     private final List<Tag> tagBreadcumb = new ArrayList<Tag>();
 
     public EWTNodeVisitor(String ewtAttributePrefix, ExpressionCompiler expressionCompiler) {
         this.ewtAttributePrefix = ewtAttributePrefix;
         this.expressionCompiler = expressionCompiler;
+        this.rootNode = new RootNode();
+        this.parentNode = this.rootNode;
 
     }
 
-    private CompiledExpression compileExpression(PageAttribute attribute) {
+    private CompiledExpressionHolder compileExpression(PageAttribute attribute) {
         try {
-            return expressionCompiler.compile(attribute.getValue());
+            return new CompiledExpressionHolder(expressionCompiler.compile(attribute.getValue()), attribute);
         } catch (RuntimeException e) {
             // TODO
             return null;
         }
     }
 
-    private void fillTagNode(TagNode tagNode, PageAttribute attribute) {
+    private void fillEwtTagNodeWithAttribute(TagNode tagNode, PageAttribute attribute) {
         String ewtAttributeName = attribute.getName().substring(ewtAttributePrefix.length());
         if (ewtAttributeName.equals("each")) {
-            throwIfAttributeDefined(attribute, tagNode.getForeachExpression());
-            tagNode.setForeachExpression(compileExpression(attribute));
+            throwIfAttributeAlreadyDefined(attribute, tagNode.getForeachExpressionHolder());
+            tagNode.setForeachExpressionHolder(compileExpression(attribute), attribute);
         } else if (ewtAttributeName.equals("var")) {
-            throwIfAttributeDefined(attribute, tagNode.getVarExpression());
-            tagNode.setForeachExpression(compileExpression(attribute));
+            throwIfAttributeAlreadyDefined(attribute, tagNode.getVarExpressionHolder());
+            tagNode.setVarExpressionHolder(compileExpression(attribute));
         } else if (ewtAttributeName.equals("render")) {
-            throwIfAttributeDefined(attribute, tagNode.getRenderExpression());
-            tagNode.setRenderExpression(compileExpression(attribute));
+            throwIfAttributeAlreadyDefined(attribute, tagNode.getRenderExpressionHolder());
+            tagNode.setRenderExpressionHolder(compileExpression(attribute));
         } else if (ewtAttributeName.equals("text")) {
-            throwIfAttributeDefined(attribute, tagNode.getTextExpression());
-            tagNode.setTextExpression(compileExpression(attribute));
+            throwIfAttributeAlreadyDefined(attribute, tagNode.getTextExpressionHolder());
+            tagNode.setTextExpressionHolder(compileExpression(attribute));
+            tagNode.setEscapeText(true);
         } else if (ewtAttributeName.equals("utext")) {
-            throwIfAttributeDefined(attribute, tagNode.getTextExpression());
-            tagNode.setTextExpression(compileExpression(attribute));
-            tagNode.setUnescapeText(true);
+            throwIfAttributeAlreadyDefined(attribute, tagNode.getTextExpressionHolder());
+            tagNode.setTextExpressionHolder(compileExpression(attribute));
+            tagNode.setEscapeText(false);
         } else if (ewtAttributeName.equals("attr")) {
-            throwIfAttributeDefined(attribute, tagNode.getAttributeMapExpression());
+            throwIfAttributeAlreadyDefined(attribute, tagNode.getAttributeMapExpression());
             tagNode.setAttributeMapExpression(compileExpression(attribute));
         } else if (ewtAttributeName.equals("attrprepend")) {
-            throwIfAttributeDefined(attribute, tagNode.getAttributePrependMapExpression());
+            throwIfAttributeAlreadyDefined(attribute, tagNode.getAttributePrependMapExpression());
             tagNode.setAttributePrependMapExpression(compileExpression(attribute));
         } else if (ewtAttributeName.equals("attrappend")) {
-            throwIfAttributeDefined(attribute, tagNode.getAttributeAppendMapExpression());
+            throwIfAttributeAlreadyDefined(attribute, tagNode.getAttributeAppendMapExpression());
             tagNode.setAttributeAppendMapExpression(compileExpression(attribute));
         } else if (ewtAttributeName.startsWith("attr-")) {
             String attrName = ewtAttributeName.substring("attr-".length());
@@ -92,28 +98,19 @@ public class EWTNodeVisitor extends NodeVisitor {
         }
     }
 
-    private boolean processTag(Tag tag) {
-        @SuppressWarnings("unchecked")
-        Vector<PageAttribute> attributes = tag.getAttributesEx();
+    private boolean isEwtNode(Vector<PageAttribute> attributes) {
 
-        TagNode tagNode = null;
-        for (PageAttribute attribute : attributes) {
-            String attributeName = attribute.getName();
+        for (PageAttribute pageAttribute : attributes) {
+            String attributeName = pageAttribute.getName();
             if (attributeName != null && attributeName.startsWith(ewtAttributePrefix)) {
-                if (tagNode == null) {
-                    tagNode = new TagNode();
-                }
-                fillTagNode(tagNode, attribute);
+                return true;
             }
         }
-        if (tagNode != null) {
-            // TODO validate if text and parseBody not used together
-            return true;
-        }
+
         return false;
     }
 
-    private void throwIfAttributeDefined(PageAttribute attribute, CompiledExpression foreachExpression) {
+    private void throwIfAttributeAlreadyDefined(PageAttribute attribute, CompiledExpressionHolder foreachExpression) {
         // TODO Auto-generated method stub
 
     }
@@ -137,8 +134,22 @@ public class EWTNodeVisitor extends NodeVisitor {
 
     @Override
     public void visitTag(Tag tag) {
-        boolean ewtProcessed = processTag(tag);
-        if (!ewtProcessed) {
+        // TODO if render has a constant node value, return do not handle the tag at all for performance reasons
+        @SuppressWarnings("unchecked")
+        Vector<PageAttribute> attributes = tag.getAttributesEx();
+
+        if (isEwtNode(attributes)) {
+            if (currentSB.length() > 0) {
+                parentNode.getChildren().add(new TextNode(currentSB.toString(), false));
+            }
+
+            TagNode tagNode = new TagNode();
+            for (PageAttribute attribute : attributes) {
+                tagNode.getPageAttributes().add(attribute);
+                fillEwtTagNodeWithAttribute(tagNode, attribute);
+            }
+            // TODO validate if text and parseBody not used together
+        } else {
             currentSB.append(tag.toTagHtml());
         }
     }

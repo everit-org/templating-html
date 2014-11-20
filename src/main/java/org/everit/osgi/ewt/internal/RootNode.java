@@ -16,10 +16,33 @@
  */
 package org.everit.osgi.ewt.internal;
 
+import java.util.HashMap;
 import java.util.Map;
 
-public interface EWTNode {
+public class RootNode extends ParentNode {
 
-    void render(StringBuilder sb, Map<String, Object> vars);
+    private final Map<String, TagNode> bookmarks = new HashMap<String, TagNode>();
 
+    public void addBookmark(String name, TagNode tagNode) {
+        if ("root".equals(name)) {
+            // TODO throw exception
+        }
+        TagNode previous = bookmarks.get(name);
+        if (previous != null) {
+            // TODO throw exception
+        }
+        bookmarks.put(name, tagNode);
+    }
+
+    public ParentNode getBookmark(String name) {
+        if ("root".equals(name)) {
+            return this;
+        }
+        return bookmarks.get(name);
+    }
+
+    @Override
+    public void render(StringBuilder sb, Map<String, Object> vars) {
+        renderChildren(sb, vars);
+    }
 }

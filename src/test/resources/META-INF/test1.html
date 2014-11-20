@@ -17,9 +17,9 @@
 
 -->
 <!--
-  bookmark: Bookmarking an item (when a bookmark is directly rendered, the ewt_directAccess variable is set to true). 
+  bookmark: Bookmarking an item (when a bookmark is directly rendered, the ewt_directAccess variable is set to true).
   each: iteration
-  var: 
+  var:
   render: all, body, tag, none; e.g.: ewt-render="(ewt_directAccess) ? 'body' : 'none'"
   text: Alternative content for the tag
   utext: Unescaped alternative content for the tag.
@@ -32,20 +32,17 @@
   parsebody: default false
 -->
 <html>
-<head>
-</head>
-  <body>
+<head />
+<body>
   <table data-ewt-bookmark="XYTable" data-ewt-attr="['id' : myId + 'myTable']">
     <tr data-ewt-each="['user' : users]"
         data-ewt-var="['rowId' : portlet.id + myVar.userId]"
         data-ewt-attr="['id' : rowId]">
       <td><span data-ewt-text="user.firstName">John</span></td>
       <td><span data-ewt-utext="user.lastName">Doe</span></td>
-      <td></td>
+      <td><div data-ewt-text="'someText'" /></td>
       <td>
-        <button value=""
-          data-ewt-attr="['text' : loc.add,
-                          'onclick' : myId + 'reRender(rowId)']"></button>
+        
       </td>
     </tr>
     <tr data-ewt-render="none">

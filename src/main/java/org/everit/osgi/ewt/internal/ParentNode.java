@@ -16,10 +16,21 @@
  */
 package org.everit.osgi.ewt.internal;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
-public interface EWTNode {
+public abstract class ParentNode implements EWTNode {
 
-    void render(StringBuilder sb, Map<String, Object> vars);
+    private final List<EWTNode> children = new ArrayList<EWTNode>();
 
+    public List<EWTNode> getChildren() {
+        return children;
+    }
+
+    protected void renderChildren(StringBuilder sb, Map<String, Object> vars) {
+        for (EWTNode ewtNode : children) {
+            ewtNode.render(sb, vars);
+        }
+    }
 }

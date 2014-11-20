@@ -16,10 +16,6 @@
  */
 package org.everit.osgi.ewt.internal;
 
-import java.util.Map;
-
-public interface EWTNode {
-
-    void render(StringBuilder sb, Map<String, Object> vars);
-
+public enum RenderScope {
+    ALL, BODY, NONE, TAG
 }
