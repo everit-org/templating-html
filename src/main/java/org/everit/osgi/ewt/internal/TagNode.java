@@ -16,6 +16,7 @@
  */
 package org.everit.osgi.ewt.internal;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -25,6 +26,33 @@ import org.everit.osgi.ewt.el.CompiledExpression;
 import org.htmlparser.Tag;
 
 public class TagNode extends ParentNode {
+
+    private class AttributesRenderParameter {
+
+        public final Map<String, Object> appendMap;
+
+        public final Map<String, Object> map;
+
+        public final Map<String, Object> prependMap;
+
+        public final Map<String, Object> vars;
+
+        public AttributesRenderParameter(Map<String, Object> vars) {
+
+            Map<String, Object> lam = evaluateExpression(attributeMapExpressionHolder, vars, Map.class);
+            map = new HashMap<String, Object>(lam);
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> lapm = evaluateExpression(attributePrependMapExpressionHolder, vars, Map.class);
+            prependMap = lapm;
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> laam = evaluateExpression(attributeAppendMapExpressionHolder, vars, Map.class);
+            appendMap = laam;
+
+            this.vars = vars;
+        }
+    }
 
     private CompiledExpressionHolder attributeAppendMapExpressionHolder;
 
@@ -38,7 +66,7 @@ public class TagNode extends ParentNode {
 
     private CompiledExpressionHolder foreachExpressionHolder = null;
 
-    private Map<String, RenderableAttribute> renderableAttributes = new LinkedHashMap<String, RenderableAttribute>();
+    private final Map<String, RenderableAttribute> renderableAttributes = new LinkedHashMap<String, RenderableAttribute>();
 
     /**
      * Defaults to all.
@@ -248,9 +276,31 @@ public class TagNode extends ParentNode {
         }
     }
 
-    private void renderAttribute(final String attributeName, final RenderableAttribute renderableAttribute) {
+    private void renderAttribute(StringBuilder sb, final String attributeName,
+            final RenderableAttribute renderableAttribute, AttributesRenderParameter attributesRenderParam) {
+        String attributeValue = renderableAttribute.getConstantValue();
 
+        boolean mapContains = attributesRenderParam.map.containsKey(attributeName);
+        if (mapContains) {
+            attributesRenderParam.map.remove(attributeName);
+        }
+
+        if (expressionHolder != null) {
+            Object attributeValueObject = evaluateExpression(expressionHolder, attributesRenderParam.vars,
+                    Object.class);
+            if (attributeValueObject != null) {
+                attributeValue = attributeValueObject.toString();
+            } else {
+                attributeValue = null;
+            }
+        }
+
+        String previousText = renderableAttribute.getPreviousText();
+        if (previousText != null) {
+            sb.append(previousText);
+        }
         // TODO
+
     }
 
     private void renderItem(final StringBuilder sb, final Map<String, Object> vars) {
@@ -259,9 +309,13 @@ public class TagNode extends ParentNode {
             return;
         }
 
-        String text = evaluateText(sb, vars);
+        String text = null;
+        if (render == RenderScope.ALL || render == RenderScope.BODY) {
+            text = evaluateText(sb, vars);
+        }
+
         if (render == RenderScope.ALL || render == RenderScope.TAG) {
-            renderTag(sb, vars, text);
+            renderTag(sb, vars, text, render == RenderScope.ALL);
         } else {
             if (text != null) {
                 sb.append(text);
@@ -272,17 +326,43 @@ public class TagNode extends ParentNode {
 
     }
 
-    private void renderTag(final StringBuilder sb, final Map<String, Object> vars, final String text) {
+    private void renderTag(final StringBuilder sb, final Map<String, Object> vars, final String text, boolean renderBody) {
         sb.append("<").append(tagName);
+
+        AttributesRenderParameter attributeRenderParam = new AttributesRenderParameter(vars);
 
         Iterator<Entry<String, RenderableAttribute>> iterator = renderableAttributes.entrySet().iterator();
         while (iterator.hasNext()) {
             Entry<String, RenderableAttribute> entry = iterator.next();
             String attributeName = entry.getKey();
             RenderableAttribute renderableAttribute = entry.getValue();
-            renderAttribute(attributeName, renderableAttribute);
+            renderAttribute(sb, attributeName, renderableAttribute, attributeRenderParam);
         }
-        // TODO render end tag or closing
+
+        sb.append(' ');
+        if (!renderBody || (text == null && getChildren().size() == 0)) {
+            if (endTag != null) {
+                sb.append('>').append(endTag.toHtml(true));
+            } else {
+                if (tag.isEmptyXmlTag()) {
+                    sb.append('/');
+                }
+                sb.append('>');
+            }
+        } else {
+            sb.append('>');
+            if (text != null) {
+                sb.append(text);
+            } else {
+                renderChildren(sb, vars);
+            }
+            if (tag.isEmptyXmlTag()) {
+                sb.append("</").append(tag.getTagName()).append('>');
+            } else if (endTag != null) {
+                sb.append(endTag.toHtml(true));
+            }
+        }
+
     }
 
     public void setAttributeAppendMapExpressionHolder(final CompiledExpressionHolder attributeAppendMapExpression) {
