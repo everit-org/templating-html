@@ -16,27 +16,21 @@
  */
 package org.everit.osgi.ewt.internal;
 
-import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import org.everit.osgi.ewt.el.CompiledExpression;
 import org.htmlparser.Tag;
-import org.htmlparser.lexer.PageAttribute;
 
 public class TagNode extends ParentNode {
 
-    private final Map<String, CompiledExpression> attributeAppendExpressions = new LinkedHashMap<String, CompiledExpression>();
+    private CompiledExpressionHolder attributeAppendMapExpressionHolder;
 
-    private CompiledExpression attributeAppendMapExpression;
+    private CompiledExpressionHolder attributeMapExpressionHolder;
 
-    private final Map<String, CompiledExpression> attributeExpressions = new LinkedHashMap<String, CompiledExpression>();
-    private CompiledExpression attributeMapExpression;
-    private final Map<String, CompiledExpression> attributePrependExpressions = new LinkedHashMap<String, CompiledExpression>();
-
-    private CompiledExpression attributePrependMapExpression;
+    private CompiledExpressionHolder attributePrependMapExpressionHolder;
 
     private Tag endTag = null;
 
@@ -44,18 +38,22 @@ public class TagNode extends ParentNode {
 
     private CompiledExpressionHolder foreachExpressionHolder = null;
 
-    private final List<PageAttribute> pageAttributes = new ArrayList<PageAttribute>();
+    private Map<String, RenderableAttribute> renderableAttributes = new LinkedHashMap<String, RenderableAttribute>();
 
     /**
      * Defaults to all.
      */
     private CompiledExpressionHolder renderExpressionHolder = null;
 
+    private Tag tag;
+
+    private String tagName;
+
     private CompiledExpressionHolder textExpressionHolder = null;
 
     private CompiledExpressionHolder varExpressionHolder = null;
 
-    private String escape(String textString) {
+    private String escape(final String textString) {
         StringBuilder sb = new StringBuilder(textString.length());
         for (int i = 0, n = textString.length(); i < n; i++) {
             char charAt = textString.charAt(i);
@@ -83,8 +81,8 @@ public class TagNode extends ParentNode {
         return null;
     }
 
-    private <R> R evaluateExpression(CompiledExpressionHolder expressionHolder, Map<String, Object> vars,
-            Class<R> clazz) {
+    private <R> R evaluateExpression(final CompiledExpressionHolder expressionHolder, final Map<String, Object> vars,
+            final Class<R> clazz) {
         if (expressionHolder == null) {
             return null;
         }
@@ -107,12 +105,12 @@ public class TagNode extends ParentNode {
         return null;
     }
 
-    private Entry<String, Iterable<?>> evaluateForeach(Map<String, Object> vars) {
+    private Entry<String, Iterable<?>> evaluateForeach(final Map<String, Object> vars) {
         // TODO Auto-generated method stub
         return null;
     }
 
-    private RenderScope evaluateRender(Map<String, Object> vars) {
+    private RenderScope evaluateRender(final Map<String, Object> vars) {
         String renderString = evaluateExpression(renderExpressionHolder, vars, String.class);
         if (renderString == null || renderString.equalsIgnoreCase(RenderScope.ALL.toString())) {
             return RenderScope.ALL;
@@ -130,7 +128,7 @@ public class TagNode extends ParentNode {
         return null;
     }
 
-    private Map<String, Object> evaluateTagVariables(Map<String, Object> vars) {
+    private Map<String, Object> evaluateTagVariables(final Map<String, Object> vars) {
         if (varExpressionHolder == null) {
             return null;
         }
@@ -156,7 +154,7 @@ public class TagNode extends ParentNode {
         return mapResult;
     }
 
-    private String evaluateText(StringBuilder sb, Map<String, Object> vars) {
+    private String evaluateText(final StringBuilder sb, final Map<String, Object> vars) {
         if (textExpressionHolder == null) {
             return null;
         } else {
@@ -174,42 +172,35 @@ public class TagNode extends ParentNode {
                 // TODO throw nice exception
             }
         }
+        return null;
     }
 
-    public Map<String, CompiledExpression> getAttributeAppendExpressions() {
-        return attributeAppendExpressions;
+    public CompiledExpressionHolder getAttributeAppendMapExpressionHolder() {
+        return attributeAppendMapExpressionHolder;
     }
 
-    public CompiledExpression getAttributeAppendMapExpression() {
-        return attributeAppendMapExpression;
+    public CompiledExpressionHolder getAttributeMapExpressionHolder() {
+        return attributeMapExpressionHolder;
     }
 
-    public Map<String, CompiledExpression> getAttributeExpressions() {
-        return attributeExpressions;
-    }
-
-    public CompiledExpression getAttributeMapExpression() {
-        return attributeMapExpression;
-    }
-
-    public Map<String, CompiledExpression> getAttributePrependExpressions() {
-        return attributePrependExpressions;
-    }
-
-    public CompiledExpression getAttributePrependMapExpression() {
-        return attributePrependMapExpression;
+    public CompiledExpressionHolder getAttributePrependMapExpressionHolder() {
+        return attributePrependMapExpressionHolder;
     }
 
     public CompiledExpressionHolder getForeachExpressionHolder() {
         return foreachExpressionHolder;
     }
 
-    public List<PageAttribute> getPageAttributes() {
-        return pageAttributes;
+    public Map<String, RenderableAttribute> getRenderableAttributes() {
+        return renderableAttributes;
     }
 
     public CompiledExpressionHolder getRenderExpressionHolder() {
         return renderExpressionHolder;
+    }
+
+    public String getTagName() {
+        return tagName;
     }
 
     public CompiledExpressionHolder getTextExpressionHolder() {
@@ -225,7 +216,7 @@ public class TagNode extends ParentNode {
     }
 
     @Override
-    public void render(StringBuilder sb, Map<String, Object> vars) {
+    public void render(final StringBuilder sb, final Map<String, Object> vars) {
         Entry<String, Iterable<?>> foreachEntry = evaluateForeach(vars);
 
         if (foreachEntry == null || foreachEntry.getValue() == null) {
@@ -257,61 +248,84 @@ public class TagNode extends ParentNode {
         }
     }
 
-    private void renderItem(StringBuilder sb, Map<String, Object> vars) {
+    private void renderAttribute(final String attributeName, final RenderableAttribute renderableAttribute) {
+
+        // TODO
+    }
+
+    private void renderItem(final StringBuilder sb, final Map<String, Object> vars) {
         RenderScope render = evaluateRender(vars);
         if (render == RenderScope.NONE) {
             return;
         }
 
+        String text = evaluateText(sb, vars);
         if (render == RenderScope.ALL || render == RenderScope.TAG) {
-            sb.append('<');
-            for (PageAttribute pageAttribute : pageAttributes) {
-                // TODO render attributes
-            }
-
-            // TODO if there is a body, render it, otherwise close the tag if it is self-closed or render the endTag
-            // renderBody(sb, vars);
+            renderTag(sb, vars, text);
         } else {
-            evaluateText(sb, vars);
+            if (text != null) {
+                sb.append(text);
+            } else {
+                renderChildren(sb, vars);
+            }
         }
 
-        // TODO
-
     }
 
-    public void setAttributeAppendMapExpression(CompiledExpression attributeAppendMapExpression) {
-        this.attributeAppendMapExpression = attributeAppendMapExpression;
+    private void renderTag(final StringBuilder sb, final Map<String, Object> vars, final String text) {
+        sb.append("<").append(tagName);
+
+        Iterator<Entry<String, RenderableAttribute>> iterator = renderableAttributes.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Entry<String, RenderableAttribute> entry = iterator.next();
+            String attributeName = entry.getKey();
+            RenderableAttribute renderableAttribute = entry.getValue();
+            renderAttribute(attributeName, renderableAttribute);
+        }
+        // TODO render end tag or closing
     }
 
-    public void setAttributeMapExpression(CompiledExpression attributeMapExpression) {
-        this.attributeMapExpression = attributeMapExpression;
+    public void setAttributeAppendMapExpressionHolder(final CompiledExpressionHolder attributeAppendMapExpression) {
+        this.attributeAppendMapExpressionHolder = attributeAppendMapExpression;
     }
 
-    public void setAttributePrependMapExpression(CompiledExpression attributePrependMapExpression) {
-        this.attributePrependMapExpression = attributePrependMapExpression;
+    public void setAttributeMapExpressionHolder(final CompiledExpressionHolder attributeMapExpression) {
+        this.attributeMapExpressionHolder = attributeMapExpression;
     }
 
-    public void setEndTag(Tag endTag) {
+    public void setAttributePrependMapExpressionHolder(final CompiledExpressionHolder attributePrependMapExpression) {
+        this.attributePrependMapExpressionHolder = attributePrependMapExpression;
+    }
+
+    public void setEndTag(final Tag endTag) {
         this.endTag = endTag;
     }
 
-    public void setEscapeText(boolean unescapeText) {
+    public void setEscapeText(final boolean unescapeText) {
         this.escapeText = unescapeText;
     }
 
-    public void setForeachExpressionHolder(CompiledExpressionHolder foreachExpressionHolder) {
+    public void setForeachExpressionHolder(final CompiledExpressionHolder foreachExpressionHolder) {
         this.foreachExpressionHolder = foreachExpressionHolder;
     }
 
-    public void setRenderExpressionHolder(CompiledExpressionHolder renderExpressionHolder) {
+    public void setRenderExpressionHolder(final CompiledExpressionHolder renderExpressionHolder) {
         this.renderExpressionHolder = renderExpressionHolder;
     }
 
-    public void setTextExpressionHolder(CompiledExpressionHolder textExpressionHolder) {
+    public void setTag(final Tag tag) {
+        this.tag = tag;
+    }
+
+    public void setTagName(final String tagName) {
+        this.tagName = tagName;
+    }
+
+    public void setTextExpressionHolder(final CompiledExpressionHolder textExpressionHolder) {
         this.textExpressionHolder = textExpressionHolder;
     }
 
-    public void setVarExpressionHolder(CompiledExpressionHolder varExpressionHolder) {
+    public void setVarExpressionHolder(final CompiledExpressionHolder varExpressionHolder) {
         this.varExpressionHolder = varExpressionHolder;
     }
 

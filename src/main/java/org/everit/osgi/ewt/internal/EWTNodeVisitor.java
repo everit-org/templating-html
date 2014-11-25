@@ -17,6 +17,7 @@
 package org.everit.osgi.ewt.internal;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 
@@ -41,7 +42,7 @@ public class EWTNodeVisitor extends NodeVisitor {
 
     private final List<Tag> tagBreadcumb = new ArrayList<Tag>();
 
-    public EWTNodeVisitor(String ewtAttributePrefix, ExpressionCompiler expressionCompiler) {
+    public EWTNodeVisitor(final String ewtAttributePrefix, final ExpressionCompiler expressionCompiler) {
         this.ewtAttributePrefix = ewtAttributePrefix;
         this.expressionCompiler = expressionCompiler;
         this.rootNode = new RootNode();
@@ -49,7 +50,7 @@ public class EWTNodeVisitor extends NodeVisitor {
 
     }
 
-    private CompiledExpressionHolder compileExpression(PageAttribute attribute) {
+    private CompiledExpressionHolder compileExpression(final PageAttribute attribute) {
         try {
             return new CompiledExpressionHolder(expressionCompiler.compile(attribute.getValue()), attribute);
         } catch (RuntimeException e) {
@@ -58,11 +59,11 @@ public class EWTNodeVisitor extends NodeVisitor {
         }
     }
 
-    private void fillEwtTagNodeWithAttribute(TagNode tagNode, PageAttribute attribute) {
+    private void fillEwtTagNodeWithAttribute(final TagNode tagNode, final PageAttribute attribute) {
         String ewtAttributeName = attribute.getName().substring(ewtAttributePrefix.length());
         if (ewtAttributeName.equals("each")) {
             throwIfAttributeAlreadyDefined(attribute, tagNode.getForeachExpressionHolder());
-            tagNode.setForeachExpressionHolder(compileExpression(attribute), attribute);
+            tagNode.setForeachExpressionHolder(compileExpression(attribute));
         } else if (ewtAttributeName.equals("var")) {
             throwIfAttributeAlreadyDefined(attribute, tagNode.getVarExpressionHolder());
             tagNode.setVarExpressionHolder(compileExpression(attribute));
@@ -78,14 +79,14 @@ public class EWTNodeVisitor extends NodeVisitor {
             tagNode.setTextExpressionHolder(compileExpression(attribute));
             tagNode.setEscapeText(false);
         } else if (ewtAttributeName.equals("attr")) {
-            throwIfAttributeAlreadyDefined(attribute, tagNode.getAttributeMapExpression());
-            tagNode.setAttributeMapExpression(compileExpression(attribute));
+            throwIfAttributeAlreadyDefined(attribute, tagNode.getAttributeMapExpressionHolder());
+            tagNode.setAttributeMapExpressionHolder(compileExpression(attribute));
         } else if (ewtAttributeName.equals("attrprepend")) {
-            throwIfAttributeAlreadyDefined(attribute, tagNode.getAttributePrependMapExpression());
-            tagNode.setAttributePrependMapExpression(compileExpression(attribute));
+            throwIfAttributeAlreadyDefined(attribute, tagNode.getAttributePrependMapExpressionHolder());
+            tagNode.setAttributePrependMapExpressionHolder(compileExpression(attribute));
         } else if (ewtAttributeName.equals("attrappend")) {
-            throwIfAttributeAlreadyDefined(attribute, tagNode.getAttributeAppendMapExpression());
-            tagNode.setAttributeAppendMapExpression(compileExpression(attribute));
+            throwIfAttributeAlreadyDefined(attribute, tagNode.getAttributeAppendMapExpressionHolder());
+            tagNode.setAttributeAppendMapExpressionHolder(compileExpression(attribute));
         } else if (ewtAttributeName.startsWith("attr-")) {
             String attrName = ewtAttributeName.substring("attr-".length());
             tagNode.getAttributeExpressions().put(attrName, compileExpression(attribute));
@@ -98,7 +99,7 @@ public class EWTNodeVisitor extends NodeVisitor {
         }
     }
 
-    private boolean isEwtNode(Vector<PageAttribute> attributes) {
+    private boolean isEwtNode(final Vector<PageAttribute> attributes) {
 
         for (PageAttribute pageAttribute : attributes) {
             String attributeName = pageAttribute.getName();
@@ -110,30 +111,31 @@ public class EWTNodeVisitor extends NodeVisitor {
         return false;
     }
 
-    private void throwIfAttributeAlreadyDefined(PageAttribute attribute, CompiledExpressionHolder foreachExpression) {
+    private void throwIfAttributeAlreadyDefined(final PageAttribute attribute,
+            final CompiledExpressionHolder foreachExpression) {
         // TODO Auto-generated method stub
 
     }
 
     @Override
-    public void visitEndTag(Tag tag) {
+    public void visitEndTag(final Tag tag) {
         // TODO Auto-generated method stub
         super.visitEndTag(tag);
     }
 
     @Override
-    public void visitRemarkNode(Remark remark) {
+    public void visitRemarkNode(final Remark remark) {
         // TODO Auto-generated method stub
         super.visitRemarkNode(remark);
     }
 
     @Override
-    public void visitStringNode(Text string) {
+    public void visitStringNode(final Text string) {
         currentSB.append(string.toPlainTextString());
     }
 
     @Override
-    public void visitTag(Tag tag) {
+    public void visitTag(final Tag tag) {
         // TODO if render has a constant node value, return do not handle the tag at all for performance reasons
         @SuppressWarnings("unchecked")
         Vector<PageAttribute> attributes = tag.getAttributesEx();
@@ -144,8 +146,14 @@ public class EWTNodeVisitor extends NodeVisitor {
             }
 
             TagNode tagNode = new TagNode();
-            for (PageAttribute attribute : attributes) {
-                tagNode.getPageAttributes().add(attribute);
+            tagNode.setTagName(tag.getRawTagName());
+            Iterator<PageAttribute> iterator = attributes.iterator();
+            // First one is the name of the tag
+            iterator.next();
+
+            while (iterator.hasNext()) {
+                PageAttribute attribute = iterator.next();
+
                 fillEwtTagNodeWithAttribute(tagNode, attribute);
             }
             // TODO validate if text and parseBody not used together
