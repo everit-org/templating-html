@@ -24,31 +24,33 @@ import java.util.Map.Entry;
 
 import org.everit.osgi.ewt.el.CompiledExpression;
 import org.htmlparser.Tag;
+import org.htmlparser.lexer.PageAttribute;
 
 public class TagNode extends ParentNode {
 
-    private class AttributesRenderParameter {
+    private class TagAttributeRenderContext {
 
-        public final Map<String, Object> appendMap;
+        public final Map<String, Object> appendValueMap;
 
-        public final Map<String, Object> map;
+        public final Map<String, Object> prependValueMap;
 
-        public final Map<String, Object> prependMap;
+        public final Map<String, Object> valueMap;
 
         public final Map<String, Object> vars;
 
-        public AttributesRenderParameter(Map<String, Object> vars) {
+        public TagAttributeRenderContext(Map<String, Object> vars) {
 
+            @SuppressWarnings("unchecked")
             Map<String, Object> lam = evaluateExpression(attributeMapExpressionHolder, vars, Map.class);
-            map = new HashMap<String, Object>(lam);
+            valueMap = new HashMap<String, Object>(lam);
 
             @SuppressWarnings("unchecked")
             Map<String, Object> lapm = evaluateExpression(attributePrependMapExpressionHolder, vars, Map.class);
-            prependMap = lapm;
+            prependValueMap = lapm;
 
             @SuppressWarnings("unchecked")
             Map<String, Object> laam = evaluateExpression(attributeAppendMapExpressionHolder, vars, Map.class);
-            appendMap = laam;
+            appendValueMap = laam;
 
             this.vars = vars;
         }
@@ -277,30 +279,60 @@ public class TagNode extends ParentNode {
     }
 
     private void renderAttribute(StringBuilder sb, final String attributeName,
-            final RenderableAttribute renderableAttribute, AttributesRenderParameter attributesRenderParam) {
+            final RenderableAttribute renderableAttribute, TagAttributeRenderContext actx) {
         String attributeValue = renderableAttribute.getConstantValue();
 
-        boolean mapContains = attributesRenderParam.map.containsKey(attributeName);
-        if (mapContains) {
-            attributesRenderParam.map.remove(attributeName);
-        }
-
-        if (expressionHolder != null) {
-            Object attributeValueObject = evaluateExpression(expressionHolder, attributesRenderParam.vars,
-                    Object.class);
-            if (attributeValueObject != null) {
-                attributeValue = attributeValueObject.toString();
-            } else {
-                attributeValue = null;
+        if (actx.valueMap != null && actx.valueMap.containsKey(attributeName)) {
+            Object attributeValueObject = actx.valueMap.remove(attributeName);
+            attributeValue = (attributeValueObject != null) ? attributeValueObject.toString() : null;
+        } else {
+            CompiledExpressionHolder expressionHolder = renderableAttribute.getExpressionHolder();
+            if (expressionHolder != null) {
+                Object attributeValueObject = evaluateExpression(expressionHolder, actx.vars,
+                        Object.class);
+                attributeValue = (attributeValueObject != null) ? attributeValueObject.toString() : null;
             }
         }
 
-        String previousText = renderableAttribute.getPreviousText();
-        if (previousText != null) {
-            sb.append(previousText);
+        String prependText = resolveXPend(attributeName, actx.prependValueMap,
+                renderableAttribute.getPrependExpressionHolder(), actx.vars);
+        if (prependText != null) {
+            attributeValue = prependText + ((attributeValue != null) ? attributeValue : "");
         }
-        // TODO
 
+        String appendText = resolveXPend(attributeName, actx.appendValueMap,
+                renderableAttribute.getAppendExpressionHolder(), actx.vars);
+        if (appendText != null) {
+            attributeValue = ((attributeValue != null) ? attributeValue : "") + appendText;
+        }
+
+        if (attributeValue != null) {
+            String previousText = renderableAttribute.getPreviousText();
+            if (previousText != null) {
+                sb.append(previousText);
+            }
+
+            sb.append(attributeName);
+
+            PageAttribute pageAttribute = renderableAttribute.getPageAttribute();
+            if (pageAttribute == null) {
+                pageAttribute = renderableAttribute.getExpressionPageAttribute();
+                if (pageAttribute == null) {
+                    pageAttribute = renderableAttribute.getPrependPageAttribute();
+                }
+                if (pageAttribute == null) {
+                    pageAttribute = renderableAttribute.getAppendPageAttribute();
+                }
+            }
+
+            String assigment = "=";
+            char quote = '"';
+            if (pageAttribute != null) {
+                assigment = pageAttribute.getAssignment();
+                quote = pageAttribute.getQuote();
+            }
+            sb.append(assigment).append(quote).append(escape(attributeValue)).append(quote);
+        }
     }
 
     private void renderItem(final StringBuilder sb, final Map<String, Object> vars) {
@@ -326,18 +358,94 @@ public class TagNode extends ParentNode {
 
     }
 
+    private void renderRemainingAttribute(StringBuilder sb, String attributeName, Object prepend,
+            Object attributeValue, Object append) {
+
+        if (attributeName == null || (prepend == null && attributeValue == null && append == null)) {
+            return;
+        }
+        sb.append(' ').append(attributeName).append("=\"");
+
+        StringBuilder attributeValueSB = new StringBuilder();
+
+        if (prepend != null) {
+            attributeValueSB.append(prepend);
+        }
+        if (attributeValue != null) {
+            attributeValueSB.append(attributeValue);
+        }
+        if (append != null) {
+            attributeValueSB.append(append);
+        }
+        sb.append(escape(attributeValueSB.toString()));
+
+        sb.append('"');
+
+    }
+
+    /**
+     * Render those attributes that are not listed directly but are available in the value, prepend or append map. The
+     * attributes are appended by adding a space in front.
+     *
+     * @param sb
+     *            The stringBuilder or the rendering process.
+     * @param vars
+     *            The context variables.
+     * @param attributeCtx
+     *            The context of the tag attributes.
+     */
+    private void renderRemainingAttributesFromMaps(StringBuilder sb, Map<String, Object> vars,
+            TagAttributeRenderContext attributeCtx) {
+
+        Map<String, Object> valueMap = attributeCtx.valueMap;
+        Map<String, Object> prependMap = attributeCtx.prependValueMap;
+        Map<String, Object> appendMap = attributeCtx.appendValueMap;
+
+        Iterator<Entry<String, Object>> iterator = valueMap.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Entry<String, Object> entry = iterator.next();
+            iterator.remove();
+            String attributeName = entry.getKey();
+            Object attributeValue = entry.getValue();
+            renderRemainingAttribute(sb, attributeName, prependMap.remove(attributeName), attributeValue,
+                    appendMap.remove(attributeName));
+        }
+
+        iterator = prependMap.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Entry<String, Object> entry = iterator.next();
+            iterator.remove();
+            String attributeName = entry.getKey();
+            Object prepend = entry.getValue();
+
+            renderRemainingAttribute(sb, attributeName, prepend, null, appendMap.remove(attributeName));
+        }
+
+        iterator = appendMap.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Entry<String, Object> entry = iterator.next();
+            iterator.remove();
+            String attributeName = entry.getKey();
+            Object append = entry.getValue();
+
+            renderRemainingAttribute(sb, attributeName, null, null, append);
+        }
+    }
+
     private void renderTag(final StringBuilder sb, final Map<String, Object> vars, final String text, boolean renderBody) {
         sb.append("<").append(tagName);
 
-        AttributesRenderParameter attributeRenderParam = new AttributesRenderParameter(vars);
+        TagAttributeRenderContext attributeCtx = new TagAttributeRenderContext(vars);
 
         Iterator<Entry<String, RenderableAttribute>> iterator = renderableAttributes.entrySet().iterator();
         while (iterator.hasNext()) {
             Entry<String, RenderableAttribute> entry = iterator.next();
             String attributeName = entry.getKey();
             RenderableAttribute renderableAttribute = entry.getValue();
-            renderAttribute(sb, attributeName, renderableAttribute, attributeRenderParam);
+            renderAttribute(sb, attributeName, renderableAttribute, attributeCtx);
         }
+
+        renderRemainingAttributesFromMaps(sb, vars, attributeCtx);
 
         sb.append(' ');
         if (!renderBody || (text == null && getChildren().size() == 0)) {
@@ -363,6 +471,21 @@ public class TagNode extends ParentNode {
             }
         }
 
+    }
+
+    private String resolveXPend(String attributeName, Map<String, Object> xpendValueMap,
+            CompiledExpressionHolder xpendExpressionHolder, Map<String, Object> vars) {
+
+        String xpend = null;
+
+        if (xpendValueMap != null && xpendValueMap.containsKey(attributeName)) {
+            Object xpendObject = xpendValueMap.remove(attributeName);
+            xpend = (xpendObject != null) ? xpendObject.toString() : null;
+        } else if (xpendExpressionHolder != null) {
+            Object xpendObject = evaluateExpression(xpendExpressionHolder, vars, Object.class);
+            xpend = (xpendObject != null) ? xpendObject.toString() : null;
+        }
+        return xpend;
     }
 
     public void setAttributeAppendMapExpressionHolder(final CompiledExpressionHolder attributeAppendMapExpression) {

@@ -4,20 +4,30 @@ import org.htmlparser.lexer.PageAttribute;
 
 public class RenderableAttribute {
 
-    private CompiledExpressionHolder appendExpressionHolder;
+    private CompiledExpressionHolder appendExpressionHolder = null;
 
-    private String constantValue;
+    private PageAttribute appendPageAttribute = null;
 
-    private CompiledExpressionHolder expressionHolder;
+    private String constantValue = null;
 
-    private PageAttribute pageAttribute;
+    private CompiledExpressionHolder expressionHolder = null;
 
-    private CompiledExpressionHolder prependExpressionHolder;
+    private PageAttribute expressionPageAttribute = null;
 
-    private String previousText;
+    private PageAttribute pageAttribute = null;
+
+    private CompiledExpressionHolder prependExpressionHolder = null;
+
+    private PageAttribute prependPageAttribute = null;
+
+    private String previousText = null;
 
     public CompiledExpressionHolder getAppendExpressionHolder() {
         return appendExpressionHolder;
+    }
+
+    public PageAttribute getAppendPageAttribute() {
+        return appendPageAttribute;
     }
 
     public String getConstantValue() {
@@ -28,12 +38,20 @@ public class RenderableAttribute {
         return expressionHolder;
     }
 
+    public PageAttribute getExpressionPageAttribute() {
+        return expressionPageAttribute;
+    }
+
     public PageAttribute getPageAttribute() {
         return pageAttribute;
     }
 
     public CompiledExpressionHolder getPrependExpressionHolder() {
         return prependExpressionHolder;
+    }
+
+    public PageAttribute getPrependPageAttribute() {
+        return prependPageAttribute;
     }
 
     public String getPreviousText() {
@@ -44,6 +62,10 @@ public class RenderableAttribute {
         this.appendExpressionHolder = appendExpressionHolder;
     }
 
+    public void setAppendPageAttribute(PageAttribute appendPageAttribute) {
+        this.appendPageAttribute = appendPageAttribute;
+    }
+
     public void setConstantValue(String constantValue) {
         this.constantValue = constantValue;
     }
@@ -52,12 +74,20 @@ public class RenderableAttribute {
         this.expressionHolder = expressionHolder;
     }
 
+    public void setExpressionPageAttribute(PageAttribute expressionPageAttribute) {
+        this.expressionPageAttribute = expressionPageAttribute;
+    }
+
     public void setPageAttribute(PageAttribute pageAttribute) {
         this.pageAttribute = pageAttribute;
     }
 
     public void setPrependExpressionHolder(CompiledExpressionHolder prependExpressionHolder) {
         this.prependExpressionHolder = prependExpressionHolder;
+    }
+
+    public void setPrependPageAttribute(PageAttribute prependPageAttribute) {
+        this.prependPageAttribute = prependPageAttribute;
     }
 
     public void setPreviousText(String previousWhitespaces) {

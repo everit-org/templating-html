@@ -25,7 +25,6 @@ import org.htmlparser.Node;
 import org.htmlparser.lexer.Lexer;
 import org.htmlparser.lexer.Page;
 import org.htmlparser.util.ParserException;
-import org.htmlparser.visitors.NodeVisitor;
 
 public class TemplateEngine {
 
@@ -46,10 +45,12 @@ public class TemplateEngine {
             UnsupportedEncodingException {
         Page page = new Page(stream, charset);
         Lexer lexer = new Lexer(page);
-        NodeVisitor visitor = new EWTNodeVisitor(ewtAttributeprefix, expressionCompiler);
+        EWTNodeVisitor visitor = new EWTNodeVisitor(ewtAttributeprefix, expressionCompiler);
+        visitor.beginParsing();
         for (Node node = lexer.nextNode(); node != null; node = lexer.nextNode()) {
             node.accept(visitor);
         }
+        visitor.finishedParsing();
         return null;
     }
 }

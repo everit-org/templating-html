@@ -31,7 +31,8 @@ public class EWTTest {
         InputStream stream = this.getClass().getClassLoader().getResourceAsStream("META-INF/test1.html");
 
         try {
-            engine.compileTemplate(stream, "UTF8");
+            CompiledTemplate compiledTemplate = engine.compileTemplate(stream, "UTF8");
+
         } catch (ParserException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
