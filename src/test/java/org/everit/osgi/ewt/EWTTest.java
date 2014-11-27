@@ -16,8 +16,13 @@
  */
 package org.everit.osgi.ewt;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 import org.htmlparser.util.ParserException;
 import org.junit.Test;
@@ -32,11 +37,23 @@ public class EWTTest {
 
         try {
             CompiledTemplate compiledTemplate = engine.compileTemplate(stream, "UTF8");
+            OutputStreamWriter writer = new OutputStreamWriter(System.out);
+            HashMap<String, Object> vars = new HashMap<String, Object>();
 
+            List<User> users = new ArrayList<User>();
+            users.add(new User("Niels", "Holgerson"));
+            users.add(new User("B", "Zs"));
+
+            vars.put("users", users);
+            compiledTemplate.render(writer, vars);
+            writer.flush();
         } catch (ParserException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (UnsupportedEncodingException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }

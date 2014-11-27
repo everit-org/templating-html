@@ -16,12 +16,14 @@
  */
 package org.everit.osgi.ewt;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.IOException;
+import java.io.Writer;
+import java.util.Map;
 
-import org.everit.osgi.ewt.internal.EWTNode;
+public interface CompiledTemplate {
 
-public class CompiledTemplate {
+    void render(Writer writer, Map<String, Object> vars) throws IOException;
 
-    private final List<EWTNode> nodes = new ArrayList<EWTNode>();
+    void render(Writer writer, Map<String, Object> vars, String bookmark) throws IOException;
+
 }

@@ -20,6 +20,7 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 
 import org.everit.osgi.ewt.el.ExpressionCompiler;
+import org.everit.osgi.ewt.internal.CompiledTemplateImpl;
 import org.everit.osgi.ewt.internal.EWTNodeVisitor;
 import org.htmlparser.Node;
 import org.htmlparser.lexer.Lexer;
@@ -44,6 +45,15 @@ public class TemplateEngine {
     public CompiledTemplate compileTemplate(InputStream stream, String charset) throws ParserException,
             UnsupportedEncodingException {
         Page page = new Page(stream, charset);
+        return compileTemplateInternal(page);
+    }
+
+    public CompiledTemplate compileTemplate(String template) throws ParserException {
+        Page page = new Page(template);
+        return compileTemplateInternal(page);
+    }
+
+    private CompiledTemplate compileTemplateInternal(Page page) throws ParserException {
         Lexer lexer = new Lexer(page);
         EWTNodeVisitor visitor = new EWTNodeVisitor(ewtAttributeprefix, expressionCompiler);
         visitor.beginParsing();
@@ -51,6 +61,7 @@ public class TemplateEngine {
             node.accept(visitor);
         }
         visitor.finishedParsing();
-        return null;
+        return new CompiledTemplateImpl(visitor.getRootNode());
     }
+
 }

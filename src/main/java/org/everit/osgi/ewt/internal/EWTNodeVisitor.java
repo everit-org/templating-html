@@ -18,15 +18,20 @@ package org.everit.osgi.ewt.internal;
 
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Vector;
 
 import org.everit.osgi.ewt.el.ExpressionCompiler;
+import org.everit.osgi.ewt.internal.util.EWTUtil;
+import org.htmlparser.Node;
 import org.htmlparser.Remark;
 import org.htmlparser.Tag;
 import org.htmlparser.Text;
+import org.htmlparser.lexer.Lexer;
 import org.htmlparser.lexer.PageAttribute;
+import org.htmlparser.util.ParserException;
 import org.htmlparser.visitors.NodeVisitor;
 
 public class EWTNodeVisitor extends NodeVisitor {
@@ -36,6 +41,14 @@ public class EWTNodeVisitor extends NodeVisitor {
         public ParentNode ewtNode;
 
         public Tag tag;
+
+        @Override
+        public String toString() {
+            if (tag == null) {
+                return "*root*";
+            }
+            return tag.getTagName();
+        }
 
         public VisitorPathElement withEwtNode(ParentNode ewtNode) {
             this.ewtNode = ewtNode;
@@ -57,9 +70,9 @@ public class EWTNodeVisitor extends NodeVisitor {
 
     private ParentNode parentNode;
 
-    private final ParentNode rootNode;
+    private final RootNode rootNode;
 
-    private final LinkedList<VisitorPathElement> visitorPath = new LinkedList<VisitorPathElement>();
+    private LinkedList<VisitorPathElement> visitorPath = new LinkedList<VisitorPathElement>();
 
     public EWTNodeVisitor(final String ewtAttributePrefix, final ExpressionCompiler expressionCompiler) {
         this.ewtAttributePrefix = ewtAttributePrefix;
@@ -79,7 +92,9 @@ public class EWTNodeVisitor extends NodeVisitor {
 
     private CompiledExpressionHolder compileExpression(final PageAttribute attribute) {
         try {
-            return new CompiledExpressionHolder(expressionCompiler.compile(attribute.getValue()), attribute);
+            String attributeValue = attribute.getValue();
+            attributeValue = EWTUtil.unescape(attributeValue);
+            return new CompiledExpressionHolder(expressionCompiler.compile(attributeValue), attribute);
         } catch (RuntimeException e) {
             // TODO
             return null;
@@ -174,6 +189,10 @@ public class EWTNodeVisitor extends NodeVisitor {
         return renderableAttribute;
     }
 
+    public RootNode getRootNode() {
+        return rootNode;
+    }
+
     private boolean isEwtNode(final Vector<PageAttribute> attributes) {
 
         for (PageAttribute pageAttribute : attributes) {
@@ -212,12 +231,18 @@ public class EWTNodeVisitor extends NodeVisitor {
         if (found == null || found.ewtNode == null) {
             currentSB.append(tag.toHtml(true));
         } else {
+            if (currentSB.length() > 0) {
+                parentNode.getChildren().add(new TextNode(currentSB.toString(), false));
+                currentSB = new StringBuilder();
+            }
+
             ((TagNode) found.ewtNode).setEndTag(tag);
 
             boolean parentFound = false;
             while (!parentFound && iterator.hasPrevious()) {
                 VisitorPathElement visitorPathElement = iterator.previous();
                 if (visitorPathElement.ewtNode != null) {
+                    parentFound = true;
                     parentNode = visitorPathElement.ewtNode;
                 }
             }
@@ -226,6 +251,31 @@ public class EWTNodeVisitor extends NodeVisitor {
 
     @Override
     public void visitRemarkNode(final Remark remark) {
+        currentSB.append("<!--");
+        String remarkText = remark.getText();
+        Lexer lexer = new Lexer(remarkText);
+        // lexer.setPosition(remark.getStartPosition() + 4);
+
+        LinkedList<VisitorPathElement> previousVisitorPath = visitorPath;
+        ParentNode previousParent = parentNode;
+
+        visitorPath = new LinkedList<VisitorPathElement>();
+        visitorPath.add(previousVisitorPath.getFirst());
+        parentNode = new RootNode();
+        try {
+            for (Node node = lexer.nextNode(); node != null; node = lexer.nextNode()) {
+                node.accept(this);
+            }
+        } catch (ParserException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        visitorPath = previousVisitorPath;
+        List<EWTNode> remarkNodes = parentNode.getChildren();
+        parentNode = previousParent;
+        parentNode.getChildren().addAll(remarkNodes);
+
+        currentSB.append("-->");
         // TODO Auto-generated method stub
         super.visitRemarkNode(remark);
     }
@@ -244,7 +294,7 @@ public class EWTNodeVisitor extends NodeVisitor {
         if (isEwtNode(attributes)) {
             appendCurrentSBAndClear();
 
-            TagNode tagNode = new TagNode();
+            TagNode tagNode = new TagNode(tag);
             tagNode.setTagName(tag.getRawTagName());
             Iterator<PageAttribute> iterator = attributes.iterator();
             // First one is the name of the tag
@@ -269,7 +319,9 @@ public class EWTNodeVisitor extends NodeVisitor {
                 parentNode = tagNode;
             }
         } else {
-            visitorPath.add(new VisitorPathElement().withTag(tag));
+            if (!tag.isEmptyXmlTag()) {
+                visitorPath.add(new VisitorPathElement().withTag(tag));
+            }
             currentSB.append(tag.toTagHtml());
         }
     }

@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.everit.osgi.ewt.el.CompiledExpression;
+import org.everit.osgi.ewt.internal.util.EWTUtil;
 import org.htmlparser.Tag;
 import org.htmlparser.lexer.PageAttribute;
 
@@ -42,17 +43,24 @@ public class TagNode extends ParentNode {
 
             @SuppressWarnings("unchecked")
             Map<String, Object> lam = evaluateExpression(attributeMapExpressionHolder, vars, Map.class);
-            valueMap = new HashMap<String, Object>(lam);
+            valueMap = createWrapperMap(lam);
 
             @SuppressWarnings("unchecked")
             Map<String, Object> lapm = evaluateExpression(attributePrependMapExpressionHolder, vars, Map.class);
-            prependValueMap = lapm;
+            prependValueMap = createWrapperMap(lapm);
 
             @SuppressWarnings("unchecked")
             Map<String, Object> laam = evaluateExpression(attributeAppendMapExpressionHolder, vars, Map.class);
-            appendValueMap = laam;
+            appendValueMap = createWrapperMap(laam);
 
             this.vars = vars;
+        }
+
+        private Map<String, Object> createWrapperMap(Map<String, Object> wrapped) {
+            if (wrapped == null) {
+                return new HashMap<String, Object>();
+            }
+            return new HashMap<String, Object>(wrapped);
         }
     }
 
@@ -75,7 +83,7 @@ public class TagNode extends ParentNode {
      */
     private CompiledExpressionHolder renderExpressionHolder = null;
 
-    private Tag tag;
+    private final Tag tag;
 
     private String tagName;
 
@@ -83,32 +91,8 @@ public class TagNode extends ParentNode {
 
     private CompiledExpressionHolder varExpressionHolder = null;
 
-    private String escape(final String textString) {
-        StringBuilder sb = new StringBuilder(textString.length());
-        for (int i = 0, n = textString.length(); i < n; i++) {
-            char charAt = textString.charAt(i);
-            switch (charAt) {
-            case '&':
-                sb.append("&amp;");
-                break;
-            case '\'':
-                sb.append("&apos;");
-                break;
-            case '"':
-                sb.append("&quot;");
-                break;
-            case '<':
-                sb.append("&lt;");
-                break;
-            case '>':
-                sb.append("&gt;");
-                break;
-            default:
-                sb.append(charAt);
-                break;
-            }
-        }
-        return null;
+    public TagNode(Tag tag) {
+        this.tag = tag;
     }
 
     private <R> R evaluateExpression(final CompiledExpressionHolder expressionHolder, final Map<String, Object> vars,
@@ -195,7 +179,7 @@ public class TagNode extends ParentNode {
                 }
                 String textString = text.toString();
                 if (escapeText) {
-                    textString = escape(textString);
+                    textString = EWTUtil.escape(textString);
                 }
                 return textString;
             } catch (RuntimeException e) {
@@ -331,7 +315,7 @@ public class TagNode extends ParentNode {
                 assigment = pageAttribute.getAssignment();
                 quote = pageAttribute.getQuote();
             }
-            sb.append(assigment).append(quote).append(escape(attributeValue)).append(quote);
+            sb.append(assigment).append(quote).append(EWTUtil.escape(attributeValue)).append(quote);
         }
     }
 
@@ -377,7 +361,7 @@ public class TagNode extends ParentNode {
         if (append != null) {
             attributeValueSB.append(append);
         }
-        sb.append(escape(attributeValueSB.toString()));
+        sb.append(EWTUtil.escape(attributeValueSB.toString()));
 
         sb.append('"');
 
@@ -447,13 +431,12 @@ public class TagNode extends ParentNode {
 
         renderRemainingAttributesFromMaps(sb, vars, attributeCtx);
 
-        sb.append(' ');
         if (!renderBody || (text == null && getChildren().size() == 0)) {
             if (endTag != null) {
                 sb.append('>').append(endTag.toHtml(true));
             } else {
                 if (tag.isEmptyXmlTag()) {
-                    sb.append('/');
+                    sb.append(" /");
                 }
                 sb.append('>');
             }
@@ -514,10 +497,6 @@ public class TagNode extends ParentNode {
 
     public void setRenderExpressionHolder(final CompiledExpressionHolder renderExpressionHolder) {
         this.renderExpressionHolder = renderExpressionHolder;
-    }
-
-    public void setTag(final Tag tag) {
-        this.tag = tag;
     }
 
     public void setTagName(final String tagName) {
