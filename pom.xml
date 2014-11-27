@@ -87,7 +87,7 @@
           <instructions>
             <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
             <Export-Package>
-              *
+              org.everit.osgi.ewt.*
             </Export-Package>
           </instructions>
         </configuration>
