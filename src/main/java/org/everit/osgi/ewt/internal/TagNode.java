@@ -21,6 +21,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.everit.osgi.ewt.el.CompiledExpression;
 import org.everit.osgi.ewt.internal.util.EWTUtil;
@@ -28,6 +29,17 @@ import org.htmlparser.Tag;
 import org.htmlparser.lexer.PageAttribute;
 
 public class TagNode extends ParentNode {
+
+    private class ForeachItem {
+        /**
+         * Either an array or an iterable.
+         */
+        public Object collection;
+
+        public String indexVarName;
+
+        public String valueVarName;
+    }
 
     private class TagAttributeRenderContext {
 
@@ -39,7 +51,7 @@ public class TagNode extends ParentNode {
 
         public final Map<String, Object> vars;
 
-        public TagAttributeRenderContext(Map<String, Object> vars) {
+        public TagAttributeRenderContext(final Map<String, Object> vars) {
 
             @SuppressWarnings("unchecked")
             Map<String, Object> lam = evaluateExpression(attributeMapExpressionHolder, vars, Map.class);
@@ -56,7 +68,7 @@ public class TagNode extends ParentNode {
             this.vars = vars;
         }
 
-        private Map<String, Object> createWrapperMap(Map<String, Object> wrapped) {
+        private Map<String, Object> createWrapperMap(final Map<String, Object> wrapped) {
             if (wrapped == null) {
                 return new HashMap<String, Object>();
             }
@@ -91,7 +103,7 @@ public class TagNode extends ParentNode {
 
     private CompiledExpressionHolder varExpressionHolder = null;
 
-    public TagNode(Tag tag) {
+    public TagNode(final Tag tag) {
         this.tag = tag;
     }
 
@@ -119,9 +131,14 @@ public class TagNode extends ParentNode {
         return null;
     }
 
-    private Entry<String, Iterable<?>> evaluateForeach(final Map<String, Object> vars) {
-        // TODO Auto-generated method stub
-        return null;
+    private Map<Object, Object> evaluateForeachMap(final Map<String, Object> vars) {
+        if (foreachExpressionHolder == null) {
+            return null;
+        }
+        @SuppressWarnings("unchecked")
+        Map<Object, Object> result = evaluateExpression(foreachExpressionHolder, vars, Map.class);
+
+        return result;
     }
 
     private RenderScope evaluateRender(final Map<String, Object> vars) {
@@ -231,39 +248,21 @@ public class TagNode extends ParentNode {
 
     @Override
     public void render(final StringBuilder sb, final Map<String, Object> vars) {
-        Entry<String, Iterable<?>> foreachEntry = evaluateForeach(vars);
+        Map<Object, Object> foreachMap = evaluateForeachMap(vars);
 
-        if (foreachEntry == null || foreachEntry.getValue() == null) {
-            if (foreachExpressionHolder != null) {
-                // Can happen if the user returns null in forech expression
-                return;
-            }
+        if (foreachExpressionHolder != null && (foreachMap == null || foreachMap.size() == 0)) {
+            return;
+        }
 
-            Map<String, Object> tagVars = evaluateTagVariables(vars);
-
-            Map<String, Object> scopedVars = vars;
-            if (tagVars != null && tagVars.size() > 0) {
-                scopedVars = new InheritantMap<String, Object>(vars);
-                scopedVars.putAll(tagVars);
-            }
-            renderItem(sb, scopedVars);
+        if (foreachMap != null) {
+            renderEach(sb, new InheritantMap<String, Object>(vars), foreachMap);
         } else {
-            Iterable<?> iterable = foreachEntry.getValue();
-            String key = foreachEntry.getKey();
-            for (Object element : iterable) {
-                Map<String, Object> scopedVars = new InheritantMap<String, Object>(vars);
-                scopedVars.put(key, element);
-                Map<String, Object> tagVars = evaluateTagVariables(scopedVars);
-                if (tagVars != null) {
-                    scopedVars.putAll(tagVars);
-                }
-                renderItem(sb, scopedVars);
-            }
+            renderItem(sb, vars);
         }
     }
 
-    private void renderAttribute(StringBuilder sb, final String attributeName,
-            final RenderableAttribute renderableAttribute, TagAttributeRenderContext actx) {
+    private void renderAttribute(final StringBuilder sb, final String attributeName,
+            final RenderableAttribute renderableAttribute, final TagAttributeRenderContext actx) {
         String attributeValue = renderableAttribute.getConstantValue();
 
         if (actx.valueMap != null && actx.valueMap.containsKey(attributeName)) {
@@ -319,31 +318,99 @@ public class TagNode extends ParentNode {
         }
     }
 
+    private void renderEach(final StringBuilder sb, final Map<String, Object> vars,
+            final Map<Object, Object> foreachMap) {
+
+        Set<Entry<Object, Object>> entrySet = foreachMap.entrySet();
+
+        ForeachItem[] items = new ForeachItem[foreachMap.size()];
+
+        int i = 0;
+        for (Entry<Object, Object> entry : entrySet) {
+
+            Object key = entry.getKey();
+            if (key == null) {
+                // TODO throw nice exception.
+            }
+
+            Object value = entry.getValue();
+
+            if (value == null) {
+                return;
+            }
+
+            if (!value.getClass().isArray() && !(value instanceof Iterable)) {
+                // TODO throw nice exception
+            }
+
+            String valueVarName = null;
+            String indexVarName = null;
+
+            if (key instanceof String) {
+                valueVarName = (String) key;
+            } else if (key instanceof Object[]) {
+                Object[] foreachKeyObjArray = (Object[]) key;
+                if (foreachKeyObjArray.length == 0 || foreachKeyObjArray.length > 2) {
+                    // TODO throw nice exception
+                }
+                valueVarName = String.valueOf(foreachKeyObjArray[0]);
+                if (foreachKeyObjArray.length == 2) {
+                    indexVarName = String.valueOf(foreachKeyObjArray[1]);
+                }
+            } else {
+                // TODO throw nice exception
+            }
+            ForeachItem item = new ForeachItem();
+            item.collection = value;
+            item.indexVarName = indexVarName;
+            item.valueVarName = valueVarName;
+            items[i] = item;
+            i++;
+        }
+
+        renderEachRecurse(sb, vars, items, 0);
+
+    }
+
+    private void renderEachRecurse(final StringBuilder sb, final Map<String, Object> vars, final ForeachItem[] items,
+            final int i) {
+        // TODO Auto-generated method stub
+
+    }
+
     private void renderItem(final StringBuilder sb, final Map<String, Object> vars) {
-        RenderScope render = evaluateRender(vars);
+        Map<String, Object> tagVars = evaluateTagVariables(vars);
+
+        Map<String, Object> scopedVars = vars;
+        if (tagVars != null && tagVars.size() > 0) {
+            scopedVars = new InheritantMap<String, Object>(vars);
+            scopedVars.putAll(tagVars);
+        }
+
+        RenderScope render = evaluateRender(scopedVars);
         if (render == RenderScope.NONE) {
             return;
         }
 
         String text = null;
         if (render == RenderScope.ALL || render == RenderScope.BODY) {
-            text = evaluateText(sb, vars);
+            text = evaluateText(sb, scopedVars);
         }
 
         if (render == RenderScope.ALL || render == RenderScope.TAG) {
-            renderTag(sb, vars, text, render == RenderScope.ALL);
+            renderTag(sb, scopedVars, text, render == RenderScope.ALL);
         } else {
             if (text != null) {
                 sb.append(text);
             } else {
-                renderChildren(sb, vars);
+                renderChildren(sb, scopedVars);
             }
         }
 
     }
 
-    private void renderRemainingAttribute(StringBuilder sb, String attributeName, Object prepend,
-            Object attributeValue, Object append) {
+    private void renderRemainingAttribute(final StringBuilder sb, final String attributeName, final Object prepend,
+            final Object attributeValue, final Object append) {
 
         if (attributeName == null || (prepend == null && attributeValue == null && append == null)) {
             return;
@@ -378,8 +445,8 @@ public class TagNode extends ParentNode {
      * @param attributeCtx
      *            The context of the tag attributes.
      */
-    private void renderRemainingAttributesFromMaps(StringBuilder sb, Map<String, Object> vars,
-            TagAttributeRenderContext attributeCtx) {
+    private void renderRemainingAttributesFromMaps(final StringBuilder sb, final Map<String, Object> vars,
+            final TagAttributeRenderContext attributeCtx) {
 
         Map<String, Object> valueMap = attributeCtx.valueMap;
         Map<String, Object> prependMap = attributeCtx.prependValueMap;
@@ -416,7 +483,8 @@ public class TagNode extends ParentNode {
         }
     }
 
-    private void renderTag(final StringBuilder sb, final Map<String, Object> vars, final String text, boolean renderBody) {
+    private void renderTag(final StringBuilder sb, final Map<String, Object> vars, final String text,
+            final boolean renderBody) {
         sb.append("<").append(tagName);
 
         TagAttributeRenderContext attributeCtx = new TagAttributeRenderContext(vars);
@@ -456,8 +524,8 @@ public class TagNode extends ParentNode {
 
     }
 
-    private String resolveXPend(String attributeName, Map<String, Object> xpendValueMap,
-            CompiledExpressionHolder xpendExpressionHolder, Map<String, Object> vars) {
+    private String resolveXPend(final String attributeName, final Map<String, Object> xpendValueMap,
+            final CompiledExpressionHolder xpendExpressionHolder, final Map<String, Object> vars) {
 
         String xpend = null;
 
