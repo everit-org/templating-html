@@ -16,18 +16,7 @@
  */
 package org.everit.osgi.ewt;
 
-public class User {
+public class EWTConstants {
 
-    public String firstName;
-
-    public String lastName;
-
-    public int userId;
-
-    public User(final int userId, final String firstName, final String lastName) {
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.userId = userId;
-    }
-
+    public static final String EWT_CONTEXT = "ewt_context";
 }

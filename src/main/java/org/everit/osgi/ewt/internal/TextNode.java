@@ -18,23 +18,34 @@ package org.everit.osgi.ewt.internal;
 
 import java.util.Map;
 
+import org.everit.osgi.ewt.TemplateWriter;
+import org.everit.osgi.ewt.el.ExpressionCompiler;
 import org.everit.osgi.ewt.internal.inline.CompiledInline;
+import org.everit.osgi.ewt.internal.inline.InlineCompiler;
 
 public class TextNode implements EWTNode {
 
-    private final CompiledInline compiledTemplate;
-    private final boolean parse;
+    private final CompiledInline compiledInline;
+
     private final String text;
 
-    public TextNode(String text, boolean parse) {
+    public TextNode(String text, boolean inline, ExpressionCompiler expressionCompiler) {
         this.text = text;
-        this.parse = parse;
-        this.compiledTemplate = null;
+        if (!inline) {
+            this.compiledInline = null;
+        } else {
+            this.compiledInline = InlineCompiler.compileTemplate(text, expressionCompiler);
+        }
+
     }
 
     @Override
-    public void render(StringBuilder sb, Map<String, Object> context) {
-        sb.append(text);
+    public void render(TemplateWriter writer, Map<String, Object> context) {
+        if (compiledInline != null) {
+
+        } else {
+            writer.append(text);
+        }
     }
 
 }

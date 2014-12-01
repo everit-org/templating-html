@@ -4,7 +4,8 @@ templating-web
 ## Introduction
 
 Everit Web Templating can be used to render web pages based on HTML
-templates.
+templates. The library can also be used to generate XMLs as XML syntax
+is compatible with HTML.
 
 ## Attributes
 
@@ -50,12 +51,18 @@ Value of an attribute
 
 ### Works with XML
 
-Web Templating does not 
+Web Templating can be used to generate XML documents as XML has stricter
+rules than HTML.
+
+    // TODO example of using custom namespace.
 
 ### Works with unclosed elements
 
-In standard HTML  
+In XMLs all tags must be closed. However, in HTML the same rules are not
+applied, it is possible to use a tag without closing it. E.g.:
+
+    <div><span>MyText</div>
 
 ### Extremely fast
 
-7-10x faster than concurrent templating engines.
+7-10x faster than concurrent templating engines (e.g.: Thymeleaf).

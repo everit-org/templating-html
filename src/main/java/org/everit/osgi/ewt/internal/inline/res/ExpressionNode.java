@@ -1,27 +1,40 @@
+/**
+ * This file is part of Everit - Web Templating.
+ *
+ * Everit - Web Templating is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Everit - Web Templating is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Everit - Web Templating.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package org.everit.osgi.ewt.internal.inline.res;
 
-import static java.lang.String.valueOf;
+import java.util.Map;
 
-import java.io.Serializable;
-
+import org.everit.osgi.ewt.TemplateWriter;
+import org.everit.osgi.ewt.el.CompiledExpression;
+import org.everit.osgi.ewt.el.ExpressionCompiler;
 import org.everit.osgi.ewt.internal.inline.InlineRuntime;
-import org.mvel2.MVEL;
-import org.mvel2.ParserContext;
-import org.mvel2.integration.VariableResolverFactory;
-import org.mvel2.templates.util.TemplateOutputStream;
 
 public class ExpressionNode extends Node {
-    private Serializable ce;
+    private final CompiledExpression ce;
 
     public ExpressionNode(final int begin, final String name, final char[] template, final int start,
-            final int end, final ParserContext context) {
+            final int end, final ExpressionCompiler compiler) {
         this.begin = begin;
         this.name = name;
         this.contents = template;
         this.cStart = start;
         this.cEnd = end - 1;
         this.end = end;
-        ce = MVEL.compileExpression(template, cStart, cEnd - cStart, context);
+        ce = compiler.compile(String.valueOf(template, cStart, cEnd - cStart));
     }
 
     @Override
@@ -30,10 +43,10 @@ public class ExpressionNode extends Node {
     }
 
     @Override
-    public Object eval(final InlineRuntime runtime, final TemplateOutputStream appender, final Object ctx,
-            final VariableResolverFactory factory) {
-        appender.append(valueOf(MVEL.executeExpression(ce, ctx, factory)));
-        return next != null ? next.eval(runtime, appender, ctx, factory) : null;
+    public Object eval(final InlineRuntime runtime, final TemplateWriter appender, final Object ctx,
+            final Map<String, Object> vars) {
+        appender.append(String.valueOf(ce.eval(vars)));
+        return next != null ? next.eval(runtime, appender, ctx, vars) : null;
     }
 
     @Override

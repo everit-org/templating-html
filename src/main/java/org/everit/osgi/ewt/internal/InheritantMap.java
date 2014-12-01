@@ -21,9 +21,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import org.everit.osgi.ewt.EWTConstants;
+
 public class InheritantMap<K, V> implements Map<K, V> {
 
-    private Map<K, V> internalMap;
+    private final Map<K, V> internalMap;
 
     private final Map<K, V> parentMap;
 
@@ -131,12 +133,22 @@ public class InheritantMap<K, V> implements Map<K, V> {
 
     @Override
     public V put(final K key, final V value) {
+        if (EWTConstants.EWT_CONTEXT.equals(key)) {
+            // TODO throw nice exception
+        }
         return internalMap.put(key, value);
     }
 
     @Override
     public void putAll(final Map<? extends K, ? extends V> m) {
+        if (m.containsKey(EWTConstants.EWT_CONTEXT)) {
+            // TODO throw nice exception
+        }
         internalMap.putAll(m);
+    }
+
+    V putInternal(final K key, final V value) {
+        return internalMap.put(key, value);
     }
 
     @Override

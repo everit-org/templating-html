@@ -1,10 +1,27 @@
+/**
+ * This file is part of Everit - Web Templating.
+ *
+ * Everit - Web Templating is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Everit - Web Templating is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Everit - Web Templating.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package org.everit.osgi.ewt.internal.inline.res;
 
 import static org.mvel2.util.ParseTools.subset;
 
+import java.util.Map;
+
+import org.everit.osgi.ewt.TemplateWriter;
 import org.everit.osgi.ewt.internal.inline.InlineRuntime;
-import org.mvel2.integration.VariableResolverFactory;
-import org.mvel2.templates.util.TemplateOutputStream;
 
 public abstract class Node {
     protected int begin;
@@ -47,8 +64,8 @@ public abstract class Node {
 
     public abstract boolean demarcate(Node terminatingNode, char[] template);
 
-    public abstract Object eval(InlineRuntime runtime, TemplateOutputStream appender, Object ctx,
-            VariableResolverFactory factory);
+    public abstract Object eval(InlineRuntime runtime, TemplateWriter appender, Object ctx,
+            Map<String, Object> vars);
 
     public int getBegin() {
         return begin;

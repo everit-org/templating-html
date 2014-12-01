@@ -1,12 +1,28 @@
+/**
+ * This file is part of Everit - Web Templating.
+ *
+ * Everit - Web Templating is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Everit - Web Templating is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Everit - Web Templating.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package org.everit.osgi.ewt.internal.inline;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import org.everit.osgi.ewt.el.ExpressionCompiler;
 import org.everit.osgi.ewt.internal.inline.res.CodeNode;
 import org.everit.osgi.ewt.internal.inline.res.CommentNode;
 import org.everit.osgi.ewt.internal.inline.res.EndNode;
-import org.everit.osgi.ewt.internal.inline.res.EvalNode;
 import org.everit.osgi.ewt.internal.inline.res.ExpressionNode;
 import org.everit.osgi.ewt.internal.inline.res.ForEachNode;
 import org.everit.osgi.ewt.internal.inline.res.IfNode;
@@ -64,18 +80,21 @@ public class InlineCompiler {
                     case '\r':
                         continue;
                     case '\n':
-                        if (pCtx != null)
+                        if (pCtx != null) {
                             pCtx.setLineOffset((short) start);
+                        }
                         lines++;
                     }
                 }
                 else if (start < end && chars[start] == '/') {
-                    if (start + 1 == end)
+                    if (start + 1 == end) {
                         return start;
+                    }
                     if (chars[start + 1] == '/') {
                         start++;
-                        while (start < end && chars[start] != '\n')
+                        while (start < end && chars[start] != '\n') {
                             start++;
+                        }
                     }
                     else if (chars[start + 1] == '*') {
                         start += 2;
@@ -87,8 +106,9 @@ public class InlineCompiler {
                                 }
                             case '\r':
                             case '\n':
-                                if (pCtx != null)
+                                if (pCtx != null) {
                                     pCtx.setLineOffset((short) start);
+                                }
                                 lines++;
                                 break;
                             }
@@ -96,8 +116,9 @@ public class InlineCompiler {
                         }
                     }
                 }
-                if (start == end)
+                if (start == end) {
                     return start;
+                }
                 if (chars[start] == '\'' || chars[start] == '"') {
                     start = captureStringLiteral(chars[start], chars, start, end);
                 }
@@ -105,8 +126,9 @@ public class InlineCompiler {
                     depth++;
                 }
                 else if (chars[start] == term && --depth == 0) {
-                    if (pCtx != null)
+                    if (pCtx != null) {
                         pCtx.incrementLineCount(lines);
+                    }
                     return start;
                 }
             }
@@ -126,8 +148,9 @@ public class InlineCompiler {
 
     private static int captureStringLiteral(final char type, final char[] expr, int cursor, final int end) {
         while (++cursor < end && expr[cursor] != type) {
-            if (expr[cursor] == '\\')
+            if (expr[cursor] == '\\') {
                 cursor++;
+            }
         }
 
         if (cursor >= end || expr[cursor] != type) {
@@ -137,42 +160,8 @@ public class InlineCompiler {
         return cursor;
     }
 
-    public static CompiledInline compileTemplate(final CharSequence template) {
-        return new InlineCompiler(template, ParserContext.create()).compile();
-    }
-
-    public static CompiledInline compileTemplate(final CharSequence template,
-            final Map<String, Class<? extends Node>> customNodes) {
-        return new InlineCompiler(template, customNodes, ParserContext.create()).compile();
-    }
-
-    public static CompiledInline compileTemplate(final CharSequence template,
-            final Map<String, Class<? extends Node>> customNodes,
-            final ParserContext context) {
-        return new InlineCompiler(template, customNodes, context).compile();
-    }
-
-    public static CompiledInline compileTemplate(final CharSequence template, final ParserContext context) {
-        return new InlineCompiler(template, context).compile();
-    }
-
-    public static CompiledInline compileTemplate(final String template) {
-        return new InlineCompiler(template, ParserContext.create()).compile();
-    }
-
-    public static CompiledInline compileTemplate(final String template,
-            final Map<String, Class<? extends Node>> customNodes) {
-        return new InlineCompiler(template, customNodes, ParserContext.create()).compile();
-    }
-
-    public static CompiledInline compileTemplate(final String template,
-            final Map<String, Class<? extends Node>> customNodes,
-            final ParserContext context) {
-        return new InlineCompiler(template, customNodes, context).compile();
-    }
-
-    public static CompiledInline compileTemplate(final String template, final ParserContext context) {
-        return new InlineCompiler(template, context).compile();
+    public static CompiledInline compileTemplate(final String template, ExpressionCompiler expressionCompiler) {
+        return new InlineCompiler(template, expressionCompiler).compile();
     }
 
     public static boolean isIdentifierPart(final int c) {
@@ -202,9 +191,11 @@ public class InlineCompiler {
 
     private Map<String, Class<? extends Node>> customNodes;
 
+    private final ExpressionCompiler expressionCompiler;
+
     private int lastTextRangeEnding;
 
-    private int length;
+    private final int length;
 
     private int line;
 
@@ -214,62 +205,9 @@ public class InlineCompiler {
 
     private char[] template;
 
-    public InlineCompiler(final char[] template) {
-        this.length = (this.template = template).length;
-    }
-
-    public InlineCompiler(final char[] template, final Map<String, Class<? extends Node>> customNodes) {
-        this.length = (this.template = template).length;
-        this.customNodes = customNodes;
-    }
-
-    public InlineCompiler(final char[] template, final Map<String, Class<? extends Node>> customNodes,
-            final ParserContext context) {
-        this.length = (this.template = template).length;
-        this.customNodes = customNodes;
-        this.parserContext = context;
-    }
-
-    public InlineCompiler(final char[] template, final ParserContext context) {
-        this.length = (this.template = template).length;
-        this.parserContext = context;
-    }
-
-    public InlineCompiler(final CharSequence sequence) {
-        this.length = (this.template = sequence.toString().toCharArray()).length;
-    }
-
-    public InlineCompiler(final CharSequence sequence, final Map<String, Class<? extends Node>> customNodes) {
-        this.length = (this.template = sequence.toString().toCharArray()).length;
-        this.customNodes = customNodes;
-    }
-
-    public InlineCompiler(final CharSequence sequence, final Map<String, Class<? extends Node>> customNodes,
-            final ParserContext context) {
-        this.length = (this.template = sequence.toString().toCharArray()).length;
-        this.customNodes = customNodes;
-        this.parserContext = context;
-    }
-
-    public InlineCompiler(final CharSequence sequence, final ParserContext context) {
-        this.length = (this.template = sequence.toString().toCharArray()).length;
-        this.parserContext = context;
-    }
-
-    public InlineCompiler(final String template) {
+    public InlineCompiler(final String template, ExpressionCompiler expressionCompiler) {
+        this.expressionCompiler = expressionCompiler;
         this.length = (this.template = template.toCharArray()).length;
-    }
-
-    public InlineCompiler(final String template, final Map<String, Class<? extends Node>> customNodes) {
-        this.length = (this.template = template.toCharArray()).length;
-        this.customNodes = customNodes;
-    }
-
-    public InlineCompiler(final String template, final Map<String, Class<? extends Node>> customNodes,
-            final ParserContext context) {
-        this.length = (this.template = template.toCharArray()).length;
-        this.customNodes = customNodes;
-        this.parserContext = context;
     }
 
     private char[] capture() {
@@ -297,10 +235,12 @@ public class InlineCompiler {
 
     private int captureOrbToken() {
         int newStart = ++cursor;
-        while ((cursor != length) && isIdentifierPart(template[cursor]))
+        while ((cursor != length) && isIdentifierPart(template[cursor])) {
             cursor++;
-        if (cursor != length && template[cursor] == '{')
+        }
+        if (cursor != length && template[cursor] == '{') {
             return newStart;
+        }
         return -1;
     }
 
@@ -346,7 +286,7 @@ public class InlineCompiler {
                              */
                             stack.push(n = markTextNode(n).next =
                                     new IfNode(start, name, template, captureOrbInternal(), start,
-                                            parserContext));
+                                            expressionCompiler));
 
                             n.setTerminus(new TerminalNode());
 
@@ -358,7 +298,7 @@ public class InlineCompiler {
 
                                 last.demarcate(last.getTerminus(), template);
                                 last.next = n = new IfNode(start, name, template,
-                                        captureOrbInternal(), start, parserContext);
+                                        captureOrbInternal(), start, expressionCompiler);
 
                                 stack.push(n);
                             }
@@ -367,7 +307,7 @@ public class InlineCompiler {
                         case Opcodes.FOREACH:
                             stack.push(
                                     n = markTextNode(n).next = new ForEachNode(start, name,
-                                            template, captureOrbInternal(), start, parserContext));
+                                            template, captureOrbInternal(), start, expressionCompiler));
 
                             n.setTerminus(new TerminalNode());
 
@@ -376,13 +316,7 @@ public class InlineCompiler {
                         case Opcodes.CODE:
                             n = markTextNode(n)
                                     .next = new CodeNode(start, name, template,
-                                            captureOrbInternal(), start = cursor + 1, parserContext);
-                            break;
-
-                        case Opcodes.EVAL:
-                            n = markTextNode(n).next =
-                                    new EvalNode(start, name, template, captureOrbInternal(),
-                                            start = cursor + 1, parserContext);
+                                            captureOrbInternal(), start = cursor + 1, expressionCompiler);
                             break;
 
                         case Opcodes.COMMENT:
@@ -402,10 +336,11 @@ public class InlineCompiler {
                             terminal.setEnd((lastTextRangeEnding = start) - 1);
                             terminal.calculateContents(template);
 
-                            if (end.demarcate(terminal, template))
+                            if (end.demarcate(terminal, template)) {
                                 n = n.next = terminal;
-                            else
+                            } else {
                                 n = terminal;
+                            }
 
                             break;
 
@@ -413,7 +348,7 @@ public class InlineCompiler {
                             if (name.length() == 0) {
                                 n = markTextNode(n).next =
                                         new ExpressionNode(start, name, template, captureOrbInternal(),
-                                                start = cursor + 1, parserContext);
+                                                start = cursor + 1, expressionCompiler);
                             }
                             else if (customNodes != null && customNodes.containsKey(name)) {
                                 Class<? extends Node> customNode = customNodes.get(name);
@@ -456,10 +391,11 @@ public class InlineCompiler {
                 CompileException ce2 = (CompileException) e;
                 if (ce2.getCursor() != -1) {
                     ce.setCursor(ce2.getCursor());
-                    if (ce2.getColumn() == -1)
+                    if (ce2.getColumn() == -1) {
                         ce.setColumn(ce.getCursor() - colStart);
-                    else
+                    } else {
                         ce.setColumn(ce2.getColumn());
+                    }
                 }
             }
             ce.setLineNumber(line);
@@ -489,7 +425,7 @@ public class InlineCompiler {
 
         if (n != null && n.getLength() == template.length - 1) {
             if (n instanceof ExpressionNode) {
-                return new TerminalExpressionNode(n, parserContext);
+                return new TerminalExpressionNode(n, expressionCompiler);
             }
             else {
                 return n;

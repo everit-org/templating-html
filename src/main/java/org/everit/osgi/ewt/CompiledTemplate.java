@@ -17,13 +17,12 @@
 package org.everit.osgi.ewt;
 
 import java.io.IOException;
-import java.io.Writer;
 import java.util.Map;
 
 public interface CompiledTemplate {
 
-    void render(Writer writer, Map<String, Object> vars) throws IOException;
+    void render(TemplateWriter writer, Map<String, Object> vars) throws IOException;
 
-    void render(Writer writer, Map<String, Object> vars, String bookmark) throws IOException;
+    void render(TemplateWriter writer, Map<String, Object> vars, String bookmark) throws IOException;
 
 }

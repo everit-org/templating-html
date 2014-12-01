@@ -18,7 +18,6 @@ package org.everit.osgi.ewt;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
@@ -31,7 +30,40 @@ import org.junit.Test;
 public class EWTTest {
 
     @Test
-    public void test1() {
+    public void testBookmark() {
+        TemplateEngine engine = new TemplateEngine(new MvelExpressionCompiler());
+
+        InputStream stream = this.getClass().getClassLoader().getResourceAsStream("META-INF/test1.html");
+
+        try {
+            CompiledTemplate compiledTemplate = engine.compileTemplate(stream, "UTF8");
+            OutputStreamWriter writer = new OutputStreamWriter(System.out);
+            TestTemplateWriter templateWriter = new TestTemplateWriter(writer);
+            HashMap<String, Object> vars = new HashMap<String, Object>();
+
+            List<User> users = new ArrayList<User>();
+            users.add(new User(0, "Niels", "Holgerson"));
+            users.add(new User(1, "B", "Zs"));
+
+            vars.put("users", users);
+
+            compiledTemplate.render(templateWriter, vars, "bookmark1");
+
+            writer.flush();
+        } catch (ParserException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void testFull() {
         TemplateEngine engine = new TemplateEngine(new MvelExpressionCompiler());
 
         InputStream stream = this.getClass().getClassLoader().getResourceAsStream("META-INF/test1.html");
@@ -39,12 +71,7 @@ public class EWTTest {
         try {
             CompiledTemplate compiledTemplate = engine.compileTemplate(stream, "UTF8");
             // OutputStreamWriter writer = new OutputStreamWriter(System.out);
-            OutputStreamWriter writer = new OutputStreamWriter(new OutputStream() {
-
-                @Override
-                public void write(final int b) throws IOException {
-                }
-            });
+            TemplateWriter templateWriter = new TestTemplateWriter(null);
             HashMap<String, Object> vars = new HashMap<String, Object>();
 
             List<User> users = new ArrayList<User>();
@@ -56,13 +83,13 @@ public class EWTTest {
             long startTime = System.nanoTime();
             int n = 600000;
             for (int i = 0; i < n; i++) {
-                compiledTemplate.render(writer, vars);
+                compiledTemplate.render(templateWriter, vars);
             }
             long endTime = System.nanoTime();
             System.out.println("Time: " + ((endTime - startTime) / 1000000) + "ms, "
                     + ((double) n * 1000000 / (endTime - startTime)) + " db/ms");
 
-            writer.flush();
+            // writer.flush();
         } catch (ParserException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

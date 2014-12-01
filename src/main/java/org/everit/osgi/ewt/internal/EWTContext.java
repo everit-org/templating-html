@@ -14,20 +14,18 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Everit - Web Templating.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.everit.osgi.ewt;
+package org.everit.osgi.ewt.internal;
 
-public class User {
+public class EWTContext {
 
-    public String firstName;
+    private final String bookmark;
 
-    public String lastName;
+    public EWTContext(String bookmark) {
+        this.bookmark = bookmark;
+    }
 
-    public int userId;
-
-    public User(final int userId, final String firstName, final String lastName) {
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.userId = userId;
+    public String getBookmark() {
+        return bookmark;
     }
 
 }

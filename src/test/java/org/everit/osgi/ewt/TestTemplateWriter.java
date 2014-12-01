@@ -16,18 +16,28 @@
  */
 package org.everit.osgi.ewt;
 
-public class User {
+import java.io.IOException;
+import java.io.Writer;
 
-    public String firstName;
+public class TestTemplateWriter implements TemplateWriter {
 
-    public String lastName;
+    private final Writer writer;
 
-    public int userId;
+    public TestTemplateWriter(Writer writer) {
+        this.writer = writer;
+    }
 
-    public User(final int userId, final String firstName, final String lastName) {
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.userId = userId;
+    @Override
+    public TemplateWriter append(String text) {
+        if (writer != null) {
+            try {
+                writer.write(text);
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
+        return this;
     }
 
 }

@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.everit.osgi.ewt.TemplateWriter;
+
 public abstract class ParentNode implements EWTNode {
 
     private final List<EWTNode> children = new ArrayList<EWTNode>();
@@ -28,9 +30,9 @@ public abstract class ParentNode implements EWTNode {
         return children;
     }
 
-    protected void renderChildren(StringBuilder sb, Map<String, Object> vars) {
+    protected void renderChildren(TemplateWriter writer, Map<String, Object> vars) {
         for (EWTNode ewtNode : children) {
-            ewtNode.render(sb, vars);
+            ewtNode.render(writer, vars);
         }
     }
 }

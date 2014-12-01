@@ -19,6 +19,8 @@ package org.everit.osgi.ewt.internal;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.everit.osgi.ewt.TemplateWriter;
+
 public class RootNode extends ParentNode {
 
     private final Map<String, TagNode> bookmarks = new HashMap<String, TagNode>();
@@ -42,7 +44,7 @@ public class RootNode extends ParentNode {
     }
 
     @Override
-    public void render(StringBuilder sb, Map<String, Object> vars) {
+    public void render(TemplateWriter sb, Map<String, Object> vars) {
         renderChildren(sb, vars);
     }
 }

@@ -34,7 +34,7 @@
 <html>
 <head />
 <body>
-  <table id='fddd' data-ewt-bookmark="XYTable" data-ewt-attr="['id' : myId + 'myTable']" data-ewt-render="()">
+  <table id='fddd' data-ewt-bookmark="bookmark1" data-ewt-attr="['id' : myId + 'myTable']" data-ewt-render="()">
     <tr data-ewt-each="[({'user', 'userIndex'}) : users]"
         data-ewt-var="['rowId' : user.userId]"
         data-ewt-attr="['id' : user]">
@@ -45,14 +45,14 @@
         
       </td>
     </tr>
-    <tr data-ewt-render="none">
+    <tr data-ewt-render="'all'">
       <td><span style="color: red;">fff<a href="aaa"><span> 
   </table>
   <!--[if IE 8]>
 <p>Welcome to Internet Explorer 8.</p>
 <![endif]-->
 
-  <script type="text/ewt-javascript" data-ewt-parse="true" data-ewt-attr="['type' : 'text/javascript']">
+  <script type="text/ewt-javascript" data-ewt-parsebody="true" data-ewt-attr="['type' : 'text/javascript']">
     @{myId + 'reRender'}(rowId) {
       
       ewt.reRender();

@@ -1,20 +1,35 @@
+/**
+ * This file is part of Everit - Web Templating.
+ *
+ * Everit - Web Templating is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Everit - Web Templating is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Everit - Web Templating.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package org.everit.osgi.ewt.internal.inline.res;
 
-import java.io.Serializable;
+import java.util.Map;
 
+import org.everit.osgi.ewt.TemplateWriter;
+import org.everit.osgi.ewt.el.CompiledExpression;
+import org.everit.osgi.ewt.el.ExpressionCompiler;
 import org.everit.osgi.ewt.internal.inline.InlineRuntime;
-import org.mvel2.MVEL;
-import org.mvel2.ParserContext;
-import org.mvel2.integration.VariableResolverFactory;
-import org.mvel2.templates.util.TemplateOutputStream;
 
 public class TerminalExpressionNode extends Node {
-    private Serializable ce;
+    private final CompiledExpression ce;
 
-    public TerminalExpressionNode(final Node node, final ParserContext context) {
+    public TerminalExpressionNode(final Node node, ExpressionCompiler expressionCompiler) {
         this.begin = node.begin;
         this.name = node.name;
-        ce = MVEL.compileExpression(node.contents, node.cStart, node.cEnd - node.cStart, context);
+        ce = expressionCompiler.compile(String.valueOf(node.contents, node.cStart, node.cEnd - node.cStart));
     }
 
     @Override
@@ -23,8 +38,8 @@ public class TerminalExpressionNode extends Node {
     }
 
     @Override
-    public Object eval(final InlineRuntime runtime, final TemplateOutputStream appender, final Object ctx,
-            final VariableResolverFactory factory) {
-        return MVEL.executeExpression(ce, ctx, factory);
+    public Object eval(final InlineRuntime runtime, final TemplateWriter appender, final Object ctx,
+            final Map<String, Object> vars) {
+        return ce.eval(vars);
     }
 }

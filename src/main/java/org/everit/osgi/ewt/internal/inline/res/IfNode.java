@@ -1,30 +1,49 @@
+/**
+ * This file is part of Everit - Web Templating.
+ *
+ * Everit - Web Templating is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Everit - Web Templating is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Everit - Web Templating.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package org.everit.osgi.ewt.internal.inline.res;
 
-import java.io.Serializable;
+import java.util.Map;
 
+import org.everit.osgi.ewt.TemplateWriter;
+import org.everit.osgi.ewt.el.CompiledExpression;
+import org.everit.osgi.ewt.el.ExpressionCompiler;
 import org.everit.osgi.ewt.internal.inline.InlineRuntime;
-import org.mvel2.MVEL;
-import org.mvel2.ParserContext;
-import org.mvel2.integration.VariableResolverFactory;
-import org.mvel2.templates.util.TemplateOutputStream;
 import org.mvel2.util.ParseTools;
 
 public class IfNode extends Node {
-    private Serializable ce;
+
+    private CompiledExpression ce;
+
     protected Node elseNode;
 
     protected Node trueNode;
 
     public IfNode(final int begin, final String name, final char[] template, final int start, final int end,
-            final ParserContext context) {
+            final ExpressionCompiler compiler) {
         super(begin, name, template, start, end);
-        while (cEnd > cStart && ParseTools.isWhitespace(template[cEnd]))
+        while (cEnd > cStart && ParseTools.isWhitespace(template[cEnd])) {
             cEnd--;
+        }
 
-        while (cEnd > cStart && ParseTools.isWhitespace(template[cEnd]))
+        while (cEnd > cStart && ParseTools.isWhitespace(template[cEnd])) {
             cEnd--;
+        }
         if (cStart != cEnd) {
-            ce = MVEL.compileExpression(template, cStart, cEnd - start, context);
+            ce = compiler.compile(String.valueOf(template, cStart, cEnd - start));
         }
     }
 
@@ -36,12 +55,28 @@ public class IfNode extends Node {
     }
 
     @Override
-    public Object eval(final InlineRuntime runtime, final TemplateOutputStream appender, final Object ctx,
-            final VariableResolverFactory factory) {
-        if (ce == null || MVEL.executeExpression(ce, ctx, factory, Boolean.class)) {
-            return trueNode.eval(runtime, appender, ctx, factory);
+    public Object eval(final InlineRuntime runtime, final TemplateWriter appender, final Object ctx,
+            final Map<String, Object> vars) {
+        if (evalCE(vars)) {
+            return trueNode.eval(runtime, appender, ctx, vars);
         }
-        return next != null ? next.eval(runtime, appender, ctx, factory) : null;
+        return next != null ? next.eval(runtime, appender, ctx, vars) : null;
+    }
+
+    private boolean evalCE(Map<String, Object> vars) {
+        if (ce == null) {
+            return true;
+        }
+        Object result = ce.eval(vars);
+        if (result == null) {
+            return false;
+        }
+
+        if (result instanceof Boolean) {
+            return (Boolean) result;
+        }
+
+        return Boolean.valueOf(String.valueOf(result));
     }
 
     public Node getElseNode() {

@@ -1,38 +1,52 @@
+/**
+ * This file is part of Everit - Web Templating.
+ *
+ * Everit - Web Templating is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Everit - Web Templating is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Everit - Web Templating.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package org.everit.osgi.ewt.internal.inline.res;
 
-import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import org.everit.osgi.ewt.RenderException;
+import org.everit.osgi.ewt.TemplateWriter;
+import org.everit.osgi.ewt.el.CompiledExpression;
+import org.everit.osgi.ewt.el.ExpressionCompiler;
+import org.everit.osgi.ewt.internal.InheritantMap;
 import org.everit.osgi.ewt.internal.inline.InlineRuntime;
 import org.mvel2.CompileException;
-import org.mvel2.MVEL;
-import org.mvel2.ParserContext;
-import org.mvel2.integration.VariableResolverFactory;
-import org.mvel2.integration.impl.MapVariableResolverFactory;
-import org.mvel2.templates.TemplateRuntimeError;
 import org.mvel2.templates.util.ArrayIterator;
 import org.mvel2.templates.util.CountIterator;
-import org.mvel2.templates.util.TemplateOutputStream;
 import org.mvel2.util.ParseTools;
 
 public class ForEachNode extends Node {
-    private Serializable[] ce;
-    private ParserContext context;
+    private CompiledExpression[] ce;
 
-    private Serializable cSepExpr;
+    private CompiledExpression cSepExpr;
 
+    private final ExpressionCompiler expressionCompiler;
     private String[] item;
+
     public Node nestedNode;
 
     private char[] sepExpr;
 
     public ForEachNode(final int begin, final String name, final char[] template, final int start,
-            final int end, final ParserContext context) {
+            final int end, final ExpressionCompiler expressionCompiler) {
         super(begin, name, template, start, end);
-        this.context = context;
+        this.expressionCompiler = expressionCompiler;
         configure();
     }
 
@@ -50,18 +64,6 @@ public class ForEachNode extends Node {
             case '\'':
                 i = ParseTools.balancedCapture(contents, i, contents[i]);
                 break;
-            // if (expr.size() < items.size()) {
-            // start = i;
-            // i = ParseTools.balancedCapture(contents, i, contents[i]);
-            // expr.add(ParseTools.createStringTrimmed(contents, start, i - start + 1));
-            // start = i + 1;
-            // }
-            // else {
-            // throw new CompileException("unexpected character '" + contents[i] + "' in foreach tag", contents,cStart +
-            // 1);
-            // }
-            // break;
-
             case ':':
                 items.add(ParseTools.createStringTrimmed(contents, start, i - start));
                 start = i + 1;
@@ -85,14 +87,15 @@ public class ForEachNode extends Node {
 
         item = new String[items.size()];
         int i = 0;
-        for (String s : items)
+        for (String s : items) {
             item[i++] = s;
+        }
 
         String[] expression;
-        ce = new Serializable[(expression = new String[expr.size()]).length];
+        ce = new CompiledExpression[(expression = new String[expr.size()]).length];
         i = 0;
         for (String s : expr) {
-            ce[i] = MVEL.compileExpression(expression[i++] = s, context);
+            ce[i] = expressionCompiler.compile(expression[i++] = s);
         }
     }
 
@@ -106,19 +109,20 @@ public class ForEachNode extends Node {
             sepExpr = null;
         }
         else {
-            cSepExpr = MVEL.compileExpression(sepExpr, context);
+            cSepExpr = expressionCompiler.compile(String.valueOf(sepExpr));
         }
 
         return false;
     }
 
-    public Object eval(final InlineRuntime runtime, final TemplateOutputStream appender, final Object ctx,
-            final VariableResolverFactory factory) {
+    @Override
+    public Object eval(final InlineRuntime runtime, final TemplateWriter appender, final Object ctx,
+            final Map<String, Object> vars) {
         Iterator[] iters = new Iterator[item.length];
 
         Object o;
         for (int i = 0; i < iters.length; i++) {
-            if ((o = MVEL.executeExpression(ce[i], ctx, factory)) instanceof Iterable) {
+            if ((o = ce[i].eval(vars)) instanceof Iterable) {
                 iters[i] = ((Iterable) o).iterator();
             }
             else if (o instanceof Object[]) {
@@ -128,12 +132,11 @@ public class ForEachNode extends Node {
                 iters[i] = new CountIterator((Integer) o);
             }
             else {
-                throw new TemplateRuntimeError("cannot iterate object type: " + o.getClass().getName());
+                throw new RenderException("cannot iterate object type: " + o.getClass().getName());
             }
         }
 
-        Map<String, Object> locals = new HashMap<String, Object>();
-        MapVariableResolverFactory localFactory = new MapVariableResolverFactory(locals, factory);
+        Map<String, Object> localVars = new InheritantMap<String, Object>(vars);
 
         int iterate = iters.length;
 
@@ -141,29 +144,29 @@ public class ForEachNode extends Node {
             for (int i = 0; i < iters.length; i++) {
                 if (!iters[i].hasNext()) {
                     iterate--;
-                    locals.put(item[i], "");
+                    localVars.put(item[i], "");
                 }
                 else {
-                    locals.put(item[i], iters[i].next());
+                    localVars.put(item[i], iters[i].next());
                 }
             }
             if (iterate != 0) {
-                nestedNode.eval(runtime, appender, ctx, localFactory);
+                nestedNode.eval(runtime, appender, ctx, localVars);
 
                 if (sepExpr != null) {
                     for (Iterator it : iters) {
                         if (it.hasNext()) {
-                            appender.append(String.valueOf(MVEL.executeExpression(cSepExpr, ctx, factory)));
+                            appender.append(String.valueOf(cSepExpr.eval(vars)));
                             break;
                         }
                     }
                 }
-            }
-            else
+            } else {
                 break;
+            }
         }
 
-        return next != null ? next.eval(runtime, appender, ctx, factory) : null;
+        return next != null ? next.eval(runtime, appender, ctx, vars) : null;
     }
 
     public Node getNestedNode() {

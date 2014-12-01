@@ -1,6 +1,20 @@
+/**
+ * This file is part of Everit - Web Templating.
+ *
+ * Everit - Web Templating is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Everit - Web Templating is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Everit - Web Templating.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package org.everit.osgi.ewt.internal.inline;
-
-import static java.lang.String.valueOf;
 
 public class ExecutionStack {
 
@@ -30,10 +44,11 @@ public class ExecutionStack {
     }
 
     public Object peek() {
-        if (size == 0)
+        if (size == 0) {
             return null;
-        else
+        } else {
             return element.value;
+        }
     }
 
     public Object pop() {
@@ -60,14 +75,16 @@ public class ExecutionStack {
     public String toString() {
         StackElement el = element;
 
-        if (element == null)
+        if (element == null) {
             return "<EMPTY>";
+        }
 
         StringBuilder appender = new StringBuilder().append("[");
         do {
-            appender.append(valueOf(el.value));
-            if (el.next != null)
+            appender.append(String.valueOf(el.value));
+            if (el.next != null) {
                 appender.append(", ");
+            }
         } while ((el = el.next) != null);
 
         appender.append("]");

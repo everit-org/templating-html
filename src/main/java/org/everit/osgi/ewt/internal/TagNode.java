@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.everit.osgi.ewt.TemplateWriter;
 import org.everit.osgi.ewt.el.CompiledExpression;
 import org.everit.osgi.ewt.internal.util.EWTUtil;
 import org.htmlparser.Tag;
@@ -193,7 +194,7 @@ public class TagNode extends ParentNode {
         return mapResult;
     }
 
-    private String evaluateText(final StringBuilder sb, final Map<String, Object> vars) {
+    private String evaluateText(final Map<String, Object> vars) {
         if (textExpressionHolder == null) {
             return null;
         } else {
@@ -256,7 +257,7 @@ public class TagNode extends ParentNode {
     }
 
     @Override
-    public void render(final StringBuilder sb, final Map<String, Object> vars) {
+    public void render(final TemplateWriter writer, final Map<String, Object> vars) {
         Map<Object, Object> foreachMap = evaluateForeachMap(vars);
 
         if (foreachExpressionHolder != null && (foreachMap == null || foreachMap.size() == 0)) {
@@ -264,13 +265,13 @@ public class TagNode extends ParentNode {
         }
 
         if (foreachMap != null) {
-            renderEach(sb, new InheritantMap<String, Object>(vars), foreachMap);
+            renderEach(writer, new InheritantMap<String, Object>(vars), foreachMap);
         } else {
-            renderItem(sb, vars);
+            renderItem(writer, vars);
         }
     }
 
-    private void renderAttribute(final StringBuilder sb, final String attributeName,
+    private void renderAttribute(final TemplateWriter writer, final String attributeName,
             final RenderableAttribute renderableAttribute, final TagAttributeRenderContext actx) {
         String attributeValue = renderableAttribute.getConstantValue();
 
@@ -301,10 +302,10 @@ public class TagNode extends ParentNode {
         if (attributeValue != null) {
             String previousText = renderableAttribute.getPreviousText();
             if (previousText != null) {
-                sb.append(previousText);
+                writer.append(previousText);
             }
 
-            sb.append(attributeName);
+            writer.append(attributeName);
 
             PageAttribute pageAttribute = renderableAttribute.getPageAttribute();
             if (pageAttribute == null) {
@@ -323,11 +324,12 @@ public class TagNode extends ParentNode {
                 assigment = pageAttribute.getAssignment();
                 quote = pageAttribute.getQuote();
             }
-            sb.append(assigment).append(quote).append(EWTUtil.escape(attributeValue)).append(quote);
+            String quoteString = String.valueOf(quote);
+            writer.append(assigment).append(quoteString).append(EWTUtil.escape(attributeValue)).append(quoteString);
         }
     }
 
-    private void renderEach(final StringBuilder sb, final Map<String, Object> vars,
+    private void renderEach(final TemplateWriter writer, final Map<String, Object> vars,
             final Map<Object, Object> foreachMap) {
 
         Set<Entry<Object, Object>> entrySet = foreachMap.entrySet();
@@ -377,15 +379,16 @@ public class TagNode extends ParentNode {
             i++;
         }
 
-        renderEachRecurse(sb, vars, items, 0);
+        renderEachRecurse(writer, vars, items, 0);
 
     }
 
-    private void renderEachRecurse(final StringBuilder sb, final Map<String, Object> vars, final ForeachItem[] items,
+    private void renderEachRecurse(final TemplateWriter writer, final Map<String, Object> vars,
+            final ForeachItem[] items,
             final int mapEntryIndex) {
 
         if (mapEntryIndex == items.length) {
-            renderItem(sb, vars);
+            renderItem(writer, vars);
         } else {
             ForeachItem item = items[mapEntryIndex];
             Object collectionObject = item.collection;
@@ -396,7 +399,7 @@ public class TagNode extends ParentNode {
                 while (iterator.hasNext()) {
                     Object value = iterator.next();
                     assignForEachVariables(vars, item, i, value);
-                    renderEachRecurse(sb, vars, items, mapEntryIndex + 1);
+                    renderEachRecurse(writer, vars, items, mapEntryIndex + 1);
                     i++;
                 }
             } else if (collectionObject instanceof byte[]) {
@@ -404,63 +407,63 @@ public class TagNode extends ParentNode {
                 for (int i = 0; i < collectionObject2.length; i++) {
                     byte value = collectionObject2[i];
                     assignForEachVariables(vars, item, i, value);
-                    renderEachRecurse(sb, vars, items, mapEntryIndex + 1);
+                    renderEachRecurse(writer, vars, items, mapEntryIndex + 1);
                 }
             } else if (collectionObject instanceof boolean[]) {
                 boolean[] collectionObject2 = (boolean[]) collectionObject;
                 for (int i = 0; i < collectionObject2.length; i++) {
                     boolean value = collectionObject2[i];
                     assignForEachVariables(vars, item, i, value);
-                    renderEachRecurse(sb, vars, items, mapEntryIndex + 1);
+                    renderEachRecurse(writer, vars, items, mapEntryIndex + 1);
                 }
             } else if (collectionObject instanceof char[]) {
                 char[] collectionObject2 = (char[]) collectionObject;
                 for (int i = 0; i < collectionObject2.length; i++) {
                     char value = collectionObject2[i];
                     assignForEachVariables(vars, item, i, value);
-                    renderEachRecurse(sb, vars, items, mapEntryIndex + 1);
+                    renderEachRecurse(writer, vars, items, mapEntryIndex + 1);
                 }
             } else if (collectionObject instanceof double[]) {
                 double[] collectionObject2 = (double[]) collectionObject;
                 for (int i = 0; i < collectionObject2.length; i++) {
                     double value = collectionObject2[i];
                     assignForEachVariables(vars, item, i, value);
-                    renderEachRecurse(sb, vars, items, mapEntryIndex + 1);
+                    renderEachRecurse(writer, vars, items, mapEntryIndex + 1);
                 }
             } else if (collectionObject instanceof float[]) {
                 float[] collectionObject2 = (float[]) collectionObject;
                 for (int i = 0; i < collectionObject2.length; i++) {
                     float value = collectionObject2[i];
                     assignForEachVariables(vars, item, i, value);
-                    renderEachRecurse(sb, vars, items, mapEntryIndex + 1);
+                    renderEachRecurse(writer, vars, items, mapEntryIndex + 1);
                 }
             } else if (collectionObject instanceof int[]) {
                 int[] collectionObject2 = (int[]) collectionObject;
                 for (int i = 0; i < collectionObject2.length; i++) {
                     int value = collectionObject2[i];
                     assignForEachVariables(vars, item, i, value);
-                    renderEachRecurse(sb, vars, items, mapEntryIndex + 1);
+                    renderEachRecurse(writer, vars, items, mapEntryIndex + 1);
                 }
             } else if (collectionObject instanceof long[]) {
                 long[] collectionObject2 = (long[]) collectionObject;
                 for (int i = 0; i < collectionObject2.length; i++) {
                     long value = collectionObject2[i];
                     assignForEachVariables(vars, item, i, value);
-                    renderEachRecurse(sb, vars, items, mapEntryIndex + 1);
+                    renderEachRecurse(writer, vars, items, mapEntryIndex + 1);
                 }
             } else if (collectionObject instanceof short[]) {
                 short[] collectionObject2 = (short[]) collectionObject;
                 for (int i = 0; i < collectionObject2.length; i++) {
                     short value = collectionObject2[i];
                     assignForEachVariables(vars, item, i, value);
-                    renderEachRecurse(sb, vars, items, mapEntryIndex + 1);
+                    renderEachRecurse(writer, vars, items, mapEntryIndex + 1);
                 }
             } else if (collectionObject instanceof Object[]) {
                 Object[] collectionObject2 = (Object[]) collectionObject;
                 for (int i = 0; i < collectionObject2.length; i++) {
                     Object value = collectionObject2[i];
                     assignForEachVariables(vars, item, i, value);
-                    renderEachRecurse(sb, vars, items, mapEntryIndex + 1);
+                    renderEachRecurse(writer, vars, items, mapEntryIndex + 1);
                 }
             } else {
                 // TODO throw nice exception
@@ -468,7 +471,7 @@ public class TagNode extends ParentNode {
         }
     }
 
-    private void renderItem(final StringBuilder sb, final Map<String, Object> vars) {
+    private void renderItem(final TemplateWriter writer, final Map<String, Object> vars) {
         Map<String, Object> tagVars = evaluateTagVariables(vars);
 
         Map<String, Object> scopedVars = vars;
@@ -484,28 +487,29 @@ public class TagNode extends ParentNode {
 
         String text = null;
         if (render == RenderScope.ALL || render == RenderScope.BODY) {
-            text = evaluateText(sb, scopedVars);
+            text = evaluateText(scopedVars);
         }
 
         if (render == RenderScope.ALL || render == RenderScope.TAG) {
-            renderTag(sb, scopedVars, text, render == RenderScope.ALL);
+            renderTag(writer, scopedVars, text, render == RenderScope.ALL);
         } else {
             if (text != null) {
-                sb.append(text);
+                writer.append(text);
             } else {
-                renderChildren(sb, scopedVars);
+                renderChildren(writer, scopedVars);
             }
         }
 
     }
 
-    private void renderRemainingAttribute(final StringBuilder sb, final String attributeName, final Object prepend,
+    private void renderRemainingAttribute(final TemplateWriter writer, final String attributeName,
+            final Object prepend,
             final Object attributeValue, final Object append) {
 
         if (attributeName == null || (prepend == null && attributeValue == null && append == null)) {
             return;
         }
-        sb.append(' ').append(attributeName).append("=\"");
+        writer.append(" ").append(attributeName).append("=\"");
 
         StringBuilder attributeValueSB = new StringBuilder();
 
@@ -518,9 +522,9 @@ public class TagNode extends ParentNode {
         if (append != null) {
             attributeValueSB.append(append);
         }
-        sb.append(EWTUtil.escape(attributeValueSB.toString()));
+        writer.append(EWTUtil.escape(attributeValueSB.toString()));
 
-        sb.append('"');
+        writer.append("\"");
 
     }
 
@@ -535,7 +539,7 @@ public class TagNode extends ParentNode {
      * @param attributeCtx
      *            The context of the tag attributes.
      */
-    private void renderRemainingAttributesFromMaps(final StringBuilder sb, final Map<String, Object> vars,
+    private void renderRemainingAttributesFromMaps(final TemplateWriter writer, final Map<String, Object> vars,
             final TagAttributeRenderContext attributeCtx) {
 
         Map<String, Object> valueMap = attributeCtx.valueMap;
@@ -548,7 +552,7 @@ public class TagNode extends ParentNode {
             iterator.remove();
             String attributeName = entry.getKey();
             Object attributeValue = entry.getValue();
-            renderRemainingAttribute(sb, attributeName, prependMap.remove(attributeName), attributeValue,
+            renderRemainingAttribute(writer, attributeName, prependMap.remove(attributeName), attributeValue,
                     appendMap.remove(attributeName));
         }
 
@@ -559,7 +563,7 @@ public class TagNode extends ParentNode {
             String attributeName = entry.getKey();
             Object prepend = entry.getValue();
 
-            renderRemainingAttribute(sb, attributeName, prepend, null, appendMap.remove(attributeName));
+            renderRemainingAttribute(writer, attributeName, prepend, null, appendMap.remove(attributeName));
         }
 
         iterator = appendMap.entrySet().iterator();
@@ -569,13 +573,13 @@ public class TagNode extends ParentNode {
             String attributeName = entry.getKey();
             Object append = entry.getValue();
 
-            renderRemainingAttribute(sb, attributeName, null, null, append);
+            renderRemainingAttribute(writer, attributeName, null, null, append);
         }
     }
 
-    private void renderTag(final StringBuilder sb, final Map<String, Object> vars, final String text,
+    private void renderTag(final TemplateWriter writer, final Map<String, Object> vars, final String text,
             final boolean renderBody) {
-        sb.append("<").append(tagName);
+        writer.append("<").append(tagName);
 
         TagAttributeRenderContext attributeCtx = new TagAttributeRenderContext(vars);
 
@@ -584,31 +588,31 @@ public class TagNode extends ParentNode {
             Entry<String, RenderableAttribute> entry = iterator.next();
             String attributeName = entry.getKey();
             RenderableAttribute renderableAttribute = entry.getValue();
-            renderAttribute(sb, attributeName, renderableAttribute, attributeCtx);
+            renderAttribute(writer, attributeName, renderableAttribute, attributeCtx);
         }
 
-        renderRemainingAttributesFromMaps(sb, vars, attributeCtx);
+        renderRemainingAttributesFromMaps(writer, vars, attributeCtx);
 
         if (!renderBody || (text == null && getChildren().size() == 0)) {
             if (endTag != null) {
-                sb.append('>').append(endTag.toHtml(true));
+                writer.append(">").append(endTag.toHtml(true));
             } else {
                 if (tag.isEmptyXmlTag()) {
-                    sb.append(" /");
+                    writer.append(" /");
                 }
-                sb.append('>');
+                writer.append(">");
             }
         } else {
-            sb.append('>');
+            writer.append(">");
             if (text != null) {
-                sb.append(text);
+                writer.append(text);
             } else {
-                renderChildren(sb, vars);
+                renderChildren(writer, vars);
             }
             if (tag.isEmptyXmlTag()) {
-                sb.append("</").append(tagName).append('>');
+                writer.append("</").append(tagName).append(">");
             } else if (endTag != null) {
-                sb.append(endTag.toHtml(true));
+                writer.append(endTag.toHtml(true));
             }
         }
 

@@ -85,7 +85,7 @@ public class EWTNodeVisitor extends NodeVisitor {
 
     private void appendCurrentSBAndClear() {
         if (currentSB.length() > 0) {
-            parentNode.getChildren().add(new TextNode(currentSB.toString(), false));
+            parentNode.getChildren().add(new TextNode(currentSB.toString(), false, expressionCompiler));
             currentSB = new StringBuilder();
         }
     }
@@ -107,7 +107,9 @@ public class EWTNodeVisitor extends NodeVisitor {
         String attributeName = attribute.getName();
         if (attributeName.startsWith(ewtAttributePrefix)) {
             String ewtAttributeName = attributeName.substring(ewtAttributePrefix.length());
-            if (ewtAttributeName.equals("each")) {
+            if (ewtAttributeName.equals("bookmark")) {
+                rootNode.addBookmark(EWTUtil.unescape(attribute.getValue()), tagNode);
+            } else if (ewtAttributeName.equals("each")) {
                 throwIfAttributeAlreadyDefined(attribute, tagNode.getForeachExpressionHolder());
                 tagNode.setForeachExpressionHolder(compileExpression(attribute));
             } else if (ewtAttributeName.equals("var")) {
@@ -169,8 +171,6 @@ public class EWTNodeVisitor extends NodeVisitor {
                 // TODO throw nice exception
             }
             renderableAttribute.setConstantValue(attribute.getValue());
-
-            // TODO
         }
 
     }
@@ -234,7 +234,7 @@ public class EWTNodeVisitor extends NodeVisitor {
             currentSB.append(tag.toHtml(true));
         } else {
             if (currentSB.length() > 0) {
-                parentNode.getChildren().add(new TextNode(currentSB.toString(), false));
+                parentNode.getChildren().add(new TextNode(currentSB.toString(), false, expressionCompiler));
                 currentSB = new StringBuilder();
             }
 

@@ -18,8 +18,10 @@ package org.everit.osgi.ewt.internal;
 
 import java.util.Map;
 
+import org.everit.osgi.ewt.TemplateWriter;
+
 public interface EWTNode {
 
-    void render(StringBuilder sb, Map<String, Object> vars);
+    void render(TemplateWriter writer, Map<String, Object> vars);
 
 }
