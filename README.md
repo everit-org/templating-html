@@ -6,6 +6,44 @@ templating-web
 Everit Web Templating can be used to render web pages based on HTML
 templates.
 
+## Attributes
+
+### bookmark
+
+### each
+
+### var
+
+### render
+
+all, body, tag, none; e.g.: ewt-render="(ewt_directAccess) ? 'body' : 'none'"
+
+###text
+
+Alternative content for the tag
+
+### utext
+
+Unescaped alternative content for the tag.
+
+### attr
+
+Map, attribute values
+
+### attr-*
+
+Value of an attribute
+
+### attrprepend
+
+### attrprepend-*
+
+### attrappend
+
+### attrappend-*
+
+### parsebody: default false
+
 ## Usage
 
 ## Specialties

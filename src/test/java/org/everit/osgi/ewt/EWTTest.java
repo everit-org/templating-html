@@ -18,6 +18,7 @@ package org.everit.osgi.ewt;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
@@ -37,13 +38,13 @@ public class EWTTest {
 
         try {
             CompiledTemplate compiledTemplate = engine.compileTemplate(stream, "UTF8");
-            OutputStreamWriter writer = new OutputStreamWriter(System.out);
-            // OutputStreamWriter writer = new OutputStreamWriter(new OutputStream() {
-            //
-            // @Override
-            // public void write(final int b) throws IOException {
-            // }
-            // });
+            // OutputStreamWriter writer = new OutputStreamWriter(System.out);
+            OutputStreamWriter writer = new OutputStreamWriter(new OutputStream() {
+
+                @Override
+                public void write(final int b) throws IOException {
+                }
+            });
             HashMap<String, Object> vars = new HashMap<String, Object>();
 
             List<User> users = new ArrayList<User>();
@@ -53,7 +54,7 @@ public class EWTTest {
             vars.put("users", users);
 
             long startTime = System.nanoTime();
-            int n = 1;
+            int n = 600000;
             for (int i = 0; i < n; i++) {
                 compiledTemplate.render(writer, vars);
             }
