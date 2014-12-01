@@ -18,7 +18,7 @@ import org.mvel2.templates.util.CountIterator;
 import org.mvel2.templates.util.TemplateOutputStream;
 import org.mvel2.util.ParseTools;
 
-public class CompiledForEachNode extends Node {
+public class ForEachNode extends Node {
     private Serializable[] ce;
     private ParserContext context;
 
@@ -29,7 +29,7 @@ public class CompiledForEachNode extends Node {
 
     private char[] sepExpr;
 
-    public CompiledForEachNode(final int begin, final String name, final char[] template, final int start,
+    public ForEachNode(final int begin, final String name, final char[] template, final int start,
             final int end, final ParserContext context) {
         super(begin, name, template, start, end);
         this.context = context;

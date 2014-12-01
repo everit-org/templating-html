@@ -1,20 +1,20 @@
 package org.everit.osgi.ewt.internal.inline.res;
 
+import java.io.Serializable;
+
 import org.everit.osgi.ewt.internal.inline.InlineRuntime;
 import org.mvel2.MVEL;
+import org.mvel2.ParserContext;
 import org.mvel2.integration.VariableResolverFactory;
 import org.mvel2.templates.util.TemplateOutputStream;
 
 public class TerminalExpressionNode extends Node {
-    public TerminalExpressionNode() {
-    }
+    private Serializable ce;
 
-    public TerminalExpressionNode(final Node node) {
+    public TerminalExpressionNode(final Node node, final ParserContext context) {
         this.begin = node.begin;
         this.name = node.name;
-        this.contents = node.contents;
-        this.cStart = node.cStart;
-        this.cEnd = node.cEnd;
+        ce = MVEL.compileExpression(node.contents, node.cStart, node.cEnd - node.cStart, context);
     }
 
     @Override
@@ -25,6 +25,6 @@ public class TerminalExpressionNode extends Node {
     @Override
     public Object eval(final InlineRuntime runtime, final TemplateOutputStream appender, final Object ctx,
             final VariableResolverFactory factory) {
-        return MVEL.eval(contents, cStart, cEnd - cStart, ctx, factory);
+        return MVEL.executeExpression(ce, ctx, factory);
     }
 }

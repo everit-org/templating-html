@@ -2,36 +2,27 @@ package org.everit.osgi.ewt.internal.inline.res;
 
 import static java.lang.String.valueOf;
 
+import java.io.Serializable;
+
 import org.everit.osgi.ewt.internal.inline.InlineRuntime;
 import org.mvel2.MVEL;
+import org.mvel2.ParserContext;
 import org.mvel2.integration.VariableResolverFactory;
 import org.mvel2.templates.TemplateRuntime;
 import org.mvel2.templates.util.TemplateOutputStream;
 
 public class EvalNode extends Node {
-    public EvalNode() {
-    }
-
-    public EvalNode(final int begin, final String name, final char[] template, final int start, final int end) {
-        this.begin = begin;
-        this.name = name;
-        this.contents = template;
-        this.cStart = start;
-        this.cEnd = end - 1;
-        this.end = end;
-        // this.contents = subset(template, this.cStart = start, (this.end = this.cEnd = end) - start - 1);
-    }
+    private Serializable ce;
 
     public EvalNode(final int begin, final String name, final char[] template, final int start, final int end,
-            final Node next) {
-        this.name = name;
+            final ParserContext context) {
         this.begin = begin;
+        this.name = name;
         this.contents = template;
         this.cStart = start;
         this.cEnd = end - 1;
         this.end = end;
-        // this.contents = subset(template, this.cStart = start, (this.end = this.cEnd = end) - start - 1);
-        this.next = next;
+        ce = MVEL.compileExpression(template, cStart, cEnd - cStart, context);
     }
 
     @Override
@@ -41,14 +32,14 @@ public class EvalNode extends Node {
 
     public Object eval(final InlineRuntime runtime, final TemplateOutputStream appender, final Object ctx,
             final VariableResolverFactory factory) {
-        appender.append(String.valueOf(TemplateRuntime.eval(
-                valueOf(MVEL.eval(contents, cStart, cEnd - cStart, ctx, factory)), ctx, factory)));
+        appender.append(String.valueOf(TemplateRuntime.eval(valueOf(MVEL.executeExpression(ce, ctx, factory)), ctx,
+                factory)));
         return next != null ? next.eval(runtime, appender, ctx, factory) : null;
     }
 
     @Override
     public String toString() {
-        return "EvalNode:" + name + "{" + (contents == null ? "" : new String(contents, cStart, cEnd - cStart))
-                + "} (start=" + begin + ";end=" + end + ")";
+        return "EvalNode:" + name + "{" + (contents == null ? "" : new String(contents)) + "} (start=" + begin
+                + ";end=" + end + ")";
     }
 }

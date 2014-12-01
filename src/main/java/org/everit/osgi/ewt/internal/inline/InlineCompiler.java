@@ -3,23 +3,20 @@ package org.everit.osgi.ewt.internal.inline;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.everit.osgi.ewt.internal.inline.res.CodeNode;
 import org.everit.osgi.ewt.internal.inline.res.CommentNode;
-import org.everit.osgi.ewt.internal.inline.res.CompiledCodeNode;
-import org.everit.osgi.ewt.internal.inline.res.CompiledEvalNode;
-import org.everit.osgi.ewt.internal.inline.res.CompiledExpressionNode;
-import org.everit.osgi.ewt.internal.inline.res.CompiledForEachNode;
-import org.everit.osgi.ewt.internal.inline.res.CompiledIfNode;
-import org.everit.osgi.ewt.internal.inline.res.CompiledTerminalExpressionNode;
 import org.everit.osgi.ewt.internal.inline.res.EndNode;
+import org.everit.osgi.ewt.internal.inline.res.EvalNode;
 import org.everit.osgi.ewt.internal.inline.res.ExpressionNode;
+import org.everit.osgi.ewt.internal.inline.res.ForEachNode;
 import org.everit.osgi.ewt.internal.inline.res.IfNode;
 import org.everit.osgi.ewt.internal.inline.res.Node;
 import org.everit.osgi.ewt.internal.inline.res.Opcodes;
+import org.everit.osgi.ewt.internal.inline.res.TerminalExpressionNode;
 import org.everit.osgi.ewt.internal.inline.res.TerminalNode;
 import org.everit.osgi.ewt.internal.inline.res.TextNode;
 import org.mvel2.CompileException;
 import org.mvel2.ParserContext;
-import org.mvel2.util.ExecutionStack;
 
 public class InlineCompiler {
     private static final Map<String, Integer> OPCODES = new HashMap<String, Integer>();
@@ -348,7 +345,7 @@ public class InlineCompiler {
                              * Capture any residual text node, and push the if statement on the nesting stack.
                              */
                             stack.push(n = markTextNode(n).next =
-                                    new CompiledIfNode(start, name, template, captureOrbInternal(), start,
+                                    new IfNode(start, name, template, captureOrbInternal(), start,
                                             parserContext));
 
                             n.setTerminus(new TerminalNode());
@@ -360,7 +357,7 @@ public class InlineCompiler {
                                 markTextNode(n).next = (last = (IfNode) stack.pop()).getTerminus();
 
                                 last.demarcate(last.getTerminus(), template);
-                                last.next = n = new CompiledIfNode(start, name, template,
+                                last.next = n = new IfNode(start, name, template,
                                         captureOrbInternal(), start, parserContext);
 
                                 stack.push(n);
@@ -369,7 +366,7 @@ public class InlineCompiler {
 
                         case Opcodes.FOREACH:
                             stack.push(
-                                    n = markTextNode(n).next = new CompiledForEachNode(start, name,
+                                    n = markTextNode(n).next = new ForEachNode(start, name,
                                             template, captureOrbInternal(), start, parserContext));
 
                             n.setTerminus(new TerminalNode());
@@ -378,13 +375,13 @@ public class InlineCompiler {
 
                         case Opcodes.CODE:
                             n = markTextNode(n)
-                                    .next = new CompiledCodeNode(start, name, template,
+                                    .next = new CodeNode(start, name, template,
                                             captureOrbInternal(), start = cursor + 1, parserContext);
                             break;
 
                         case Opcodes.EVAL:
                             n = markTextNode(n).next =
-                                    new CompiledEvalNode(start, name, template, captureOrbInternal(),
+                                    new EvalNode(start, name, template, captureOrbInternal(),
                                             start = cursor + 1, parserContext);
                             break;
 
@@ -415,7 +412,7 @@ public class InlineCompiler {
                         default:
                             if (name.length() == 0) {
                                 n = markTextNode(n).next =
-                                        new CompiledExpressionNode(start, name, template, captureOrbInternal(),
+                                        new ExpressionNode(start, name, template, captureOrbInternal(),
                                                 start = cursor + 1, parserContext);
                             }
                             else if (customNodes != null && customNodes.containsKey(name)) {
@@ -492,7 +489,7 @@ public class InlineCompiler {
 
         if (n != null && n.getLength() == template.length - 1) {
             if (n instanceof ExpressionNode) {
-                return new CompiledTerminalExpressionNode(n, parserContext);
+                return new TerminalExpressionNode(n, parserContext);
             }
             else {
                 return n;

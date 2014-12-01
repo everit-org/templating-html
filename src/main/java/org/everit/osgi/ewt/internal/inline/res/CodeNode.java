@@ -1,36 +1,28 @@
 package org.everit.osgi.ewt.internal.inline.res;
 
+import java.io.Serializable;
+
 import org.everit.osgi.ewt.internal.inline.InlineRuntime;
 import org.mvel2.MVEL;
+import org.mvel2.ParserContext;
 import org.mvel2.integration.VariableResolverFactory;
 import org.mvel2.templates.util.TemplateOutputStream;
 
 public class CodeNode extends Node {
-    private int offset;
-
-    private int start;
+    private Serializable ce;
 
     public CodeNode() {
     }
 
-    public CodeNode(final int begin, final String name, final char[] template, final int start, final int end) {
+    public CodeNode(final int begin, final String name, final char[] template, final int start, final int end,
+            final ParserContext context) {
         this.begin = begin;
         this.name = name;
         this.contents = template;
-        this.start = start;
-        this.offset = end - start - 1;
-
-        // this.contents = subset(template, this.cStart = start, (this.end = this.cEnd = end) - start - 1);
-    }
-
-    public CodeNode(final int begin, final String name, final char[] template, final int start, final int end,
-            final Node next) {
-        this.name = name;
-        this.begin = begin;
-        // this.contents = subset(template, this.cStart = start, (this.end = this.cEnd = end) - start - 1);
-        this.next = next;
-        this.start = start;
-        this.offset = end - start - 1;
+        this.cStart = start;
+        this.cEnd = end - 1;
+        this.end = end;
+        ce = MVEL.compileExpression(template, cStart, cEnd - cStart, context);
     }
 
     @Override
@@ -38,9 +30,10 @@ public class CodeNode extends Node {
         return false;
     }
 
+    @Override
     public Object eval(final InlineRuntime runtime, final TemplateOutputStream appender, final Object ctx,
             final VariableResolverFactory factory) {
-        MVEL.eval(contents, start, offset, ctx, factory);
+        MVEL.executeExpression(ce, ctx, factory);
         return next != null ? next.eval(runtime, appender, ctx, factory) : null;
     }
 
