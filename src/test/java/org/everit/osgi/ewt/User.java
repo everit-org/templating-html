@@ -6,9 +6,12 @@ public class User {
 
     public String lastName;
 
-    public User(String firstName, String lastName) {
+    public int userId;
+
+    public User(final int userId, final String firstName, final String lastName) {
         this.firstName = firstName;
         this.lastName = lastName;
+        this.userId = userId;
     }
 
 }

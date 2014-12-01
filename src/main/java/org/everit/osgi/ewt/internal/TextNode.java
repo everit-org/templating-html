@@ -18,11 +18,11 @@ package org.everit.osgi.ewt.internal;
 
 import java.util.Map;
 
-import org.everit.osgi.ewt.internal.templates.CompiledTemplate;
+import org.everit.osgi.ewt.internal.inline.CompiledInline;
 
 public class TextNode implements EWTNode {
 
-    private final CompiledTemplate compiledTemplate;
+    private final CompiledInline compiledTemplate;
     private final boolean parse;
     private final String text;
 

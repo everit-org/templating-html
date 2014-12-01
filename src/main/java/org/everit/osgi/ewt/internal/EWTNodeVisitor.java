@@ -50,12 +50,12 @@ public class EWTNodeVisitor extends NodeVisitor {
             return tag.getTagName();
         }
 
-        public VisitorPathElement withEwtNode(ParentNode ewtNode) {
+        public VisitorPathElement withEwtNode(final ParentNode ewtNode) {
             this.ewtNode = ewtNode;
             return this;
         }
 
-        public VisitorPathElement withTag(Tag tag) {
+        public VisitorPathElement withTag(final Tag tag) {
             this.tag = tag;
             return this;
         }
@@ -96,13 +96,14 @@ public class EWTNodeVisitor extends NodeVisitor {
             attributeValue = EWTUtil.unescape(attributeValue);
             return new CompiledExpressionHolder(expressionCompiler.compile(attributeValue), attribute);
         } catch (RuntimeException e) {
+            e.printStackTrace();
             // TODO
             return null;
         }
     }
 
     private void fillEwtTagNodeWithAttribute(final TagNode tagNode, final PageAttribute attribute,
-            String textBeforeAttribute) {
+            final String textBeforeAttribute) {
         String attributeName = attribute.getName();
         if (attributeName.startsWith(ewtAttributePrefix)) {
             String ewtAttributeName = attributeName.substring(ewtAttributePrefix.length());
@@ -179,7 +180,8 @@ public class EWTNodeVisitor extends NodeVisitor {
         appendCurrentSBAndClear();
     }
 
-    private RenderableAttribute getOrCreateRenderableAttribute(String attrName, TagNode tagNode, PageAttribute attribute) {
+    private RenderableAttribute getOrCreateRenderableAttribute(final String attrName, final TagNode tagNode,
+            final PageAttribute attribute) {
         Map<String, RenderableAttribute> renderableAttributes = tagNode.getRenderableAttributes();
         RenderableAttribute renderableAttribute = renderableAttributes.get(attrName);
         if (renderableAttribute == null) {

@@ -35,9 +35,9 @@
 <head />
 <body>
   <table id='fddd' data-ewt-bookmark="XYTable" data-ewt-attr="['id' : myId + 'myTable']">
-    <tr data-ewt-each="['user' : users]"
-        data-ewt-var="['rowId' : portlet.id + myVar.userId]"
-        data-ewt-attr="['id' : rowId]">
+    <tr data-ewt-each="[({'user', 'userIndex'}) : users]"
+        data-ewt-var="['rowId' : user.userId]"
+        data-ewt-attr="['id' : user]">
       <td><span data-ewt-text="user.firstName">John</span></td>
       <td><span data-ewt-utext="user.lastName">Doe</span></td>
       <td><div data-ewt-text="'someText'" /></td>

@@ -38,14 +38,29 @@ public class EWTTest {
         try {
             CompiledTemplate compiledTemplate = engine.compileTemplate(stream, "UTF8");
             OutputStreamWriter writer = new OutputStreamWriter(System.out);
+            // OutputStreamWriter writer = new OutputStreamWriter(new OutputStream() {
+            //
+            // @Override
+            // public void write(final int b) throws IOException {
+            // }
+            // });
             HashMap<String, Object> vars = new HashMap<String, Object>();
 
             List<User> users = new ArrayList<User>();
-            users.add(new User("Niels", "Holgerson"));
-            users.add(new User("B", "Zs"));
+            users.add(new User(0, "Niels", "Holgerson"));
+            users.add(new User(1, "B", "Zs"));
 
             vars.put("users", users);
-            compiledTemplate.render(writer, vars);
+
+            long startTime = System.nanoTime();
+            int n = 1;
+            for (int i = 0; i < n; i++) {
+                compiledTemplate.render(writer, vars);
+            }
+            long endTime = System.nanoTime();
+            System.out.println("Time: " + ((endTime - startTime) / 1000000) + "ms, "
+                    + ((double) n * 1000000 / (endTime - startTime)) + " db/ms");
+
             writer.flush();
         } catch (ParserException e) {
             // TODO Auto-generated catch block

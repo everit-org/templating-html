@@ -107,6 +107,14 @@ public class TagNode extends ParentNode {
         this.tag = tag;
     }
 
+    private void assignForEachVariables(final Map<String, Object> vars, final ForeachItem item, final int index,
+            final Object value) {
+        vars.put(item.valueVarName, value);
+        if (item.indexVarName != null) {
+            vars.put(item.indexVarName, index);
+        }
+    }
+
     private <R> R evaluateExpression(final CompiledExpressionHolder expressionHolder, final Map<String, Object> vars,
             final Class<R> clazz) {
         if (expressionHolder == null) {
@@ -200,6 +208,7 @@ public class TagNode extends ParentNode {
                 }
                 return textString;
             } catch (RuntimeException e) {
+                e.printStackTrace();
                 // TODO throw nice exception
             }
         }
@@ -373,9 +382,90 @@ public class TagNode extends ParentNode {
     }
 
     private void renderEachRecurse(final StringBuilder sb, final Map<String, Object> vars, final ForeachItem[] items,
-            final int i) {
-        // TODO Auto-generated method stub
+            final int mapEntryIndex) {
 
+        if (mapEntryIndex == items.length) {
+            renderItem(sb, vars);
+        } else {
+            ForeachItem item = items[mapEntryIndex];
+            Object collectionObject = item.collection;
+            if (collectionObject instanceof Iterable) {
+                Iterable<?> iterable = (Iterable<?>) collectionObject;
+                Iterator<?> iterator = iterable.iterator();
+                int i = 0;
+                while (iterator.hasNext()) {
+                    Object value = iterator.next();
+                    assignForEachVariables(vars, item, i, value);
+                    renderEachRecurse(sb, vars, items, mapEntryIndex + 1);
+                    i++;
+                }
+            } else if (collectionObject instanceof byte[]) {
+                byte[] collectionObject2 = (byte[]) collectionObject;
+                for (int i = 0; i < collectionObject2.length; i++) {
+                    byte value = collectionObject2[i];
+                    assignForEachVariables(vars, item, i, value);
+                    renderEachRecurse(sb, vars, items, mapEntryIndex + 1);
+                }
+            } else if (collectionObject instanceof boolean[]) {
+                boolean[] collectionObject2 = (boolean[]) collectionObject;
+                for (int i = 0; i < collectionObject2.length; i++) {
+                    boolean value = collectionObject2[i];
+                    assignForEachVariables(vars, item, i, value);
+                    renderEachRecurse(sb, vars, items, mapEntryIndex + 1);
+                }
+            } else if (collectionObject instanceof char[]) {
+                char[] collectionObject2 = (char[]) collectionObject;
+                for (int i = 0; i < collectionObject2.length; i++) {
+                    char value = collectionObject2[i];
+                    assignForEachVariables(vars, item, i, value);
+                    renderEachRecurse(sb, vars, items, mapEntryIndex + 1);
+                }
+            } else if (collectionObject instanceof double[]) {
+                double[] collectionObject2 = (double[]) collectionObject;
+                for (int i = 0; i < collectionObject2.length; i++) {
+                    double value = collectionObject2[i];
+                    assignForEachVariables(vars, item, i, value);
+                    renderEachRecurse(sb, vars, items, mapEntryIndex + 1);
+                }
+            } else if (collectionObject instanceof float[]) {
+                float[] collectionObject2 = (float[]) collectionObject;
+                for (int i = 0; i < collectionObject2.length; i++) {
+                    float value = collectionObject2[i];
+                    assignForEachVariables(vars, item, i, value);
+                    renderEachRecurse(sb, vars, items, mapEntryIndex + 1);
+                }
+            } else if (collectionObject instanceof int[]) {
+                int[] collectionObject2 = (int[]) collectionObject;
+                for (int i = 0; i < collectionObject2.length; i++) {
+                    int value = collectionObject2[i];
+                    assignForEachVariables(vars, item, i, value);
+                    renderEachRecurse(sb, vars, items, mapEntryIndex + 1);
+                }
+            } else if (collectionObject instanceof long[]) {
+                long[] collectionObject2 = (long[]) collectionObject;
+                for (int i = 0; i < collectionObject2.length; i++) {
+                    long value = collectionObject2[i];
+                    assignForEachVariables(vars, item, i, value);
+                    renderEachRecurse(sb, vars, items, mapEntryIndex + 1);
+                }
+            } else if (collectionObject instanceof short[]) {
+                short[] collectionObject2 = (short[]) collectionObject;
+                for (int i = 0; i < collectionObject2.length; i++) {
+                    short value = collectionObject2[i];
+                    assignForEachVariables(vars, item, i, value);
+                    renderEachRecurse(sb, vars, items, mapEntryIndex + 1);
+                }
+            } else if (collectionObject instanceof Object[]) {
+                Object[] collectionObject2 = (Object[]) collectionObject;
+                for (int i = 0; i < collectionObject2.length; i++) {
+                    Object value = collectionObject2[i];
+                    assignForEachVariables(vars, item, i, value);
+                    renderEachRecurse(sb, vars, items, mapEntryIndex + 1);
+                }
+            } else {
+                // TODO throw nice exception
+            }
+        }
     }
 
     private void renderItem(final StringBuilder sb, final Map<String, Object> vars) {
@@ -516,7 +606,7 @@ public class TagNode extends ParentNode {
                 renderChildren(sb, vars);
             }
             if (tag.isEmptyXmlTag()) {
-                sb.append("</").append(tag.getTagName()).append('>');
+                sb.append("</").append(tagName).append('>');
             } else if (endTag != null) {
                 sb.append(endTag.toHtml(true));
             }

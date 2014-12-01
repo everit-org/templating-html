@@ -17,6 +17,7 @@
 package org.everit.osgi.ewt.internal;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -26,8 +27,9 @@ public class InheritantMap<K, V> implements Map<K, V> {
 
     private final Map<K, V> parentMap;
 
-    public InheritantMap(Map<K, V> parentMap) {
+    public InheritantMap(final Map<K, V> parentMap) {
         this.parentMap = parentMap;
+        this.internalMap = new HashMap<K, V>();
     }
 
     @Override
@@ -36,7 +38,7 @@ public class InheritantMap<K, V> implements Map<K, V> {
     }
 
     @Override
-    public boolean containsKey(Object key) {
+    public boolean containsKey(final Object key) {
         boolean result = internalMap.containsKey(key);
         if (!result && parentMap != null) {
             return parentMap.containsKey(key);
@@ -45,7 +47,7 @@ public class InheritantMap<K, V> implements Map<K, V> {
     }
 
     @Override
-    public boolean containsValue(Object value) {
+    public boolean containsValue(final Object value) {
         boolean result = internalMap.containsValue(value);
         if (!result && parentMap != null) {
             return parentMap.containsValue(value);
@@ -59,7 +61,7 @@ public class InheritantMap<K, V> implements Map<K, V> {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(final Object obj) {
         if (this == obj) {
             return true;
         }
@@ -89,8 +91,19 @@ public class InheritantMap<K, V> implements Map<K, V> {
     }
 
     @Override
-    public V get(Object key) {
-        return internalMap.get(key);
+    public V get(final Object key) {
+
+        V result = internalMap.get(key);
+
+        if (result != null) {
+            return result;
+        }
+
+        if (!internalMap.containsKey(key)) {
+            return parentMap.get(key);
+        }
+        return null;
+
     }
 
     @Override
@@ -117,17 +130,17 @@ public class InheritantMap<K, V> implements Map<K, V> {
     }
 
     @Override
-    public V put(K key, V value) {
+    public V put(final K key, final V value) {
         return internalMap.put(key, value);
     }
 
     @Override
-    public void putAll(Map<? extends K, ? extends V> m) {
+    public void putAll(final Map<? extends K, ? extends V> m) {
         internalMap.putAll(m);
     }
 
     @Override
-    public V remove(Object key) {
+    public V remove(final Object key) {
         return internalMap.remove(key);
     }
 
