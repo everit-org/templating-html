@@ -14,25 +14,19 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Everit - Web Templating.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.everit.osgi.ewt;
+package org.everit.templating.web;
 
-import java.io.Serializable;
-import java.util.Map;
+/**
+ * Templates are written to {@link TemplateWriter}.
+ */
+public interface TemplateWriter {
 
-import org.everit.templating.web.el.CompiledExpression;
-import org.mvel2.MVEL;
-
-public class MvelCompiledExpression implements CompiledExpression {
-
-    private final Serializable mvelExpression;
-
-    public MvelCompiledExpression(Serializable mvelExpression) {
-        this.mvelExpression = mvelExpression;
-    }
-
-    @Override
-    public Object eval(Map<String, Object> vars) {
-        return MVEL.executeExpression(mvelExpression, vars);
-    }
-
+    /**
+     * Appending a text to this writer.
+     *
+     * @param text
+     *            The text that will be appended to the output.
+     * @return The template writer instance (this).
+     */
+    TemplateWriter append(String text);
 }

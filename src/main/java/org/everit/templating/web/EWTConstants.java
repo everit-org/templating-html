@@ -14,25 +14,21 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Everit - Web Templating.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.everit.osgi.ewt;
+package org.everit.templating.web;
 
-import java.io.Serializable;
-import java.util.Map;
+import org.everit.templating.web.internal.EWTContext;
 
-import org.everit.templating.web.el.CompiledExpression;
-import org.mvel2.MVEL;
+/**
+ * Constants of EWT.
+ *
+ */
+public final class EWTConstants {
 
-public class MvelCompiledExpression implements CompiledExpression {
+    /**
+     * Variable that is always in the template expressions. See the documentation of {@link EWTContext}.
+     */
+    public static final String EWT_CONTEXT = "ewt_context";
 
-    private final Serializable mvelExpression;
-
-    public MvelCompiledExpression(Serializable mvelExpression) {
-        this.mvelExpression = mvelExpression;
+    private EWTConstants() {
     }
-
-    @Override
-    public Object eval(Map<String, Object> vars) {
-        return MVEL.executeExpression(mvelExpression, vars);
-    }
-
 }

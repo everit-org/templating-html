@@ -14,25 +14,25 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Everit - Web Templating.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.everit.osgi.ewt;
+package org.everit.templating.web.internal;
 
-import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
-import org.everit.templating.web.el.CompiledExpression;
-import org.mvel2.MVEL;
+import org.everit.templating.web.TemplateWriter;
 
-public class MvelCompiledExpression implements CompiledExpression {
+public abstract class ParentNode implements EWTNode {
 
-    private final Serializable mvelExpression;
+    private final List<EWTNode> children = new ArrayList<EWTNode>();
 
-    public MvelCompiledExpression(Serializable mvelExpression) {
-        this.mvelExpression = mvelExpression;
+    public List<EWTNode> getChildren() {
+        return children;
     }
 
-    @Override
-    public Object eval(Map<String, Object> vars) {
-        return MVEL.executeExpression(mvelExpression, vars);
+    protected void renderChildren(TemplateWriter writer, Map<String, Object> vars) {
+        for (EWTNode ewtNode : children) {
+            ewtNode.render(writer, vars);
+        }
     }
-
 }

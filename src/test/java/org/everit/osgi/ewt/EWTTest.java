@@ -19,19 +19,20 @@ package org.everit.osgi.ewt;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import org.htmlparser.util.ParserException;
+import org.everit.templating.web.CompiledTemplate;
+import org.everit.templating.web.TemplateCompiler;
+import org.everit.templating.web.TemplateWriter;
 import org.junit.Test;
 
 public class EWTTest {
 
     @Test
     public void testBookmark() {
-        TemplateEngine engine = new TemplateEngine(new MvelExpressionCompiler());
+        TemplateCompiler engine = new TemplateCompiler(new MvelExpressionCompiler());
 
         InputStream stream = this.getClass().getClassLoader().getResourceAsStream("META-INF/test1.html");
 
@@ -50,12 +51,6 @@ public class EWTTest {
             compiledTemplate.render(templateWriter, vars, "bookmark1");
 
             writer.flush();
-        } catch (ParserException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (UnsupportedEncodingException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -64,7 +59,7 @@ public class EWTTest {
 
     @Test
     public void testFull() {
-        TemplateEngine engine = new TemplateEngine(new MvelExpressionCompiler());
+        TemplateCompiler engine = new TemplateCompiler(new MvelExpressionCompiler());
 
         InputStream stream = this.getClass().getClassLoader().getResourceAsStream("META-INF/test1.html");
 
@@ -90,12 +85,6 @@ public class EWTTest {
                     + ((double) n * 1000000 / (endTime - startTime)) + " db/ms");
 
             writer.flush();
-        } catch (ParserException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (UnsupportedEncodingException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

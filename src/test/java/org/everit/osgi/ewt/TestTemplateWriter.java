@@ -19,6 +19,8 @@ package org.everit.osgi.ewt;
 import java.io.IOException;
 import java.io.Writer;
 
+import org.everit.templating.web.TemplateWriter;
+
 public class TestTemplateWriter implements TemplateWriter {
 
     private final Writer writer;

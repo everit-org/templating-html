@@ -14,25 +14,21 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Everit - Web Templating.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.everit.osgi.ewt;
+package org.everit.templating.web;
 
-import java.io.Serializable;
-import java.util.Map;
+public class RenderException extends RuntimeException {
 
-import org.everit.templating.web.el.CompiledExpression;
-import org.mvel2.MVEL;
+    /**
+     * .
+     */
+    private static final long serialVersionUID = -5240158866618478489L;
 
-public class MvelCompiledExpression implements CompiledExpression {
-
-    private final Serializable mvelExpression;
-
-    public MvelCompiledExpression(Serializable mvelExpression) {
-        this.mvelExpression = mvelExpression;
+    public RenderException(String message) {
+        super(message);
     }
 
-    @Override
-    public Object eval(Map<String, Object> vars) {
-        return MVEL.executeExpression(mvelExpression, vars);
+    public RenderException(String message, Throwable cause) {
+        super(message, cause);
     }
 
 }

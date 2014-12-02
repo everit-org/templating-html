@@ -14,25 +14,21 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Everit - Web Templating.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.everit.osgi.ewt;
+package org.everit.templating.web.el;
 
-import java.io.Serializable;
 import java.util.Map;
 
-import org.everit.templating.web.el.CompiledExpression;
-import org.mvel2.MVEL;
+/**
+ * An expression that is already compiled and ready to use for evaluation.
+ */
+public interface CompiledExpression {
 
-public class MvelCompiledExpression implements CompiledExpression {
-
-    private final Serializable mvelExpression;
-
-    public MvelCompiledExpression(Serializable mvelExpression) {
-        this.mvelExpression = mvelExpression;
-    }
-
-    @Override
-    public Object eval(Map<String, Object> vars) {
-        return MVEL.executeExpression(mvelExpression, vars);
-    }
-
+    /**
+     * Evaluating an expression.
+     * 
+     * @param vars
+     *            The variables that can be used in the expression.
+     * @return The result of the expression.
+     */
+    Object eval(Map<String, Object> vars);
 }

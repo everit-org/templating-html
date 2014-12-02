@@ -14,25 +14,17 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Everit - Web Templating.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.everit.osgi.ewt;
+package org.everit.templating.web.internal.inline;
 
-import java.io.Serializable;
-import java.util.Map;
 
-import org.everit.templating.web.el.CompiledExpression;
-import org.mvel2.MVEL;
+public class StackElement {
 
-public class MvelCompiledExpression implements CompiledExpression {
+    public StackElement next;
 
-    private final Serializable mvelExpression;
+    public Object value;
 
-    public MvelCompiledExpression(Serializable mvelExpression) {
-        this.mvelExpression = mvelExpression;
+    public StackElement(final StackElement next, final Object value) {
+        this.next = next;
+        this.value = value;
     }
-
-    @Override
-    public Object eval(Map<String, Object> vars) {
-        return MVEL.executeExpression(mvelExpression, vars);
-    }
-
 }

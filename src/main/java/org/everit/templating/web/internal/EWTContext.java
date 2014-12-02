@@ -14,25 +14,18 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Everit - Web Templating.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.everit.osgi.ewt;
+package org.everit.templating.web.internal;
 
-import java.io.Serializable;
-import java.util.Map;
+public class EWTContext {
 
-import org.everit.templating.web.el.CompiledExpression;
-import org.mvel2.MVEL;
+    private final String bookmark;
 
-public class MvelCompiledExpression implements CompiledExpression {
-
-    private final Serializable mvelExpression;
-
-    public MvelCompiledExpression(Serializable mvelExpression) {
-        this.mvelExpression = mvelExpression;
+    public EWTContext(final String bookmark) {
+        this.bookmark = bookmark;
     }
 
-    @Override
-    public Object eval(Map<String, Object> vars) {
-        return MVEL.executeExpression(mvelExpression, vars);
+    public String getBookmark() {
+        return bookmark;
     }
 
 }

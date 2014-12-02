@@ -14,25 +14,30 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Everit - Web Templating.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.everit.osgi.ewt;
+package org.everit.templating.web.internal.inline.res;
 
-import java.io.Serializable;
 import java.util.Map;
 
-import org.everit.templating.web.el.CompiledExpression;
-import org.mvel2.MVEL;
+import org.everit.templating.web.TemplateWriter;
+import org.everit.templating.web.internal.inline.InlineRuntime;
 
-public class MvelCompiledExpression implements CompiledExpression {
+public class TerminalNode extends Node {
+    public TerminalNode() {
+    }
 
-    private final Serializable mvelExpression;
-
-    public MvelCompiledExpression(Serializable mvelExpression) {
-        this.mvelExpression = mvelExpression;
+    public TerminalNode(final int begin, final int end) {
+        this.begin = begin;
+        this.end = end;
     }
 
     @Override
-    public Object eval(Map<String, Object> vars) {
-        return MVEL.executeExpression(mvelExpression, vars);
+    public boolean demarcate(final Node terminatingNode, final char[] template) {
+        return false;
     }
 
+    @Override
+    public Object eval(final InlineRuntime runtime, final TemplateWriter appender, final Object ctx,
+            final Map<String, Object> vars) {
+        return next != null ? next.eval(runtime, appender, ctx, vars) : null;
+    }
 }
