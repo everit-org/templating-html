@@ -33,13 +33,6 @@ public class InlineRuntime {
         return new InlineRuntime(template, root, ".").execute(appender, context, vars);
     }
 
-    public static Object execute(final Node root, final char[] template,
-            final TemplateWriter appender, final Object context,
-            final Map<String, Object> vars, final String baseDir) {
-
-        return new InlineRuntime(template, root, baseDir).execute(appender, context, vars);
-    }
-
     private final String baseDir;
 
     private ExecutionStack relPath;

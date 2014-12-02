@@ -36,6 +36,10 @@ import org.htmlparser.visitors.NodeVisitor;
 
 public class EWTNodeVisitor extends NodeVisitor {
 
+    private enum VisitMode {
+        INLINE, NONE, NORMAL
+    }
+
     private static class VisitorPathElement {
 
         public ParentNode ewtNode;
@@ -59,7 +63,6 @@ public class EWTNodeVisitor extends NodeVisitor {
             this.tag = tag;
             return this;
         }
-
     }
 
     private StringBuilder currentSB = new StringBuilder();
@@ -71,6 +74,10 @@ public class EWTNodeVisitor extends NodeVisitor {
     private ParentNode parentNode;
 
     private final RootNode rootNode;
+
+    private int specialVisitDepth = 0;
+
+    private VisitMode visitMode = VisitMode.NORMAL;
 
     private LinkedList<VisitorPathElement> visitorPath = new LinkedList<VisitorPathElement>();
 
@@ -88,6 +95,23 @@ public class EWTNodeVisitor extends NodeVisitor {
             parentNode.getChildren().add(new TextNode(currentSB.toString(), false, expressionCompiler));
             currentSB = new StringBuilder();
         }
+    }
+
+    private boolean attributeConstantEquals(final String expectedAttributeValue, String currentAttributeValue) {
+        if (currentAttributeValue == null) {
+            return false;
+        }
+        currentAttributeValue = currentAttributeValue.trim();
+
+        if ((currentAttributeValue.startsWith("\"") && currentAttributeValue.endsWith("\""))
+                || (currentAttributeValue.startsWith("'") && currentAttributeValue.endsWith("'"))) {
+            currentAttributeValue = currentAttributeValue.substring(1, currentAttributeValue.length() - 1);
+        }
+
+        if (currentAttributeValue.equalsIgnoreCase(expectedAttributeValue)) {
+            return true;
+        }
+        return false;
     }
 
     private CompiledExpressionHolder compileExpression(final PageAttribute attribute) {
@@ -195,6 +219,12 @@ public class EWTNodeVisitor extends NodeVisitor {
         return rootNode;
     }
 
+    private boolean inline(final Tag tag) {
+        String renderAttributeName = ewtAttributePrefix + "parsebody";
+        String renderValue = tag.getAttribute(renderAttributeName);
+        return attributeConstantEquals("true", renderValue);
+    }
+
     private boolean isEwtNode(final Vector<PageAttribute> attributes) {
 
         for (PageAttribute pageAttribute : attributes) {
@@ -205,6 +235,12 @@ public class EWTNodeVisitor extends NodeVisitor {
         }
 
         return false;
+    }
+
+    private boolean renderNone(final Tag tag) {
+        String renderAttributeName = ewtAttributePrefix + "render";
+        String renderValue = tag.getAttribute(renderAttributeName);
+        return attributeConstantEquals("none", renderValue);
     }
 
     private void throwIfAttributeAlreadyDefined(final PageAttribute attribute,
@@ -230,6 +266,27 @@ public class EWTNodeVisitor extends NodeVisitor {
             }
         }
 
+        if (visitMode == VisitMode.NONE) {
+            int depth = visitorPath.size();
+            if (depth <= specialVisitDepth) {
+                visitMode = VisitMode.NORMAL;
+            } else {
+                return;
+            }
+            if (depth == specialVisitDepth) {
+                return;
+            }
+        } else if (visitMode == VisitMode.INLINE) {
+            int depth = visitorPath.size();
+            if (depth > specialVisitDepth) {
+                currentSB.append(tag.toHtml(true));
+                return;
+            }
+            parentNode.getChildren().add(new TextNode(currentSB.toString(), true, expressionCompiler));
+            currentSB = new StringBuilder();
+            visitMode = VisitMode.NORMAL;
+        }
+
         if (found == null || found.ewtNode == null) {
             currentSB.append(tag.toHtml(true));
         } else {
@@ -253,6 +310,15 @@ public class EWTNodeVisitor extends NodeVisitor {
 
     @Override
     public void visitRemarkNode(final Remark remark) {
+        if (visitMode == VisitMode.NONE) {
+            return;
+        }
+
+        if (visitMode == VisitMode.INLINE) {
+            currentSB.append(remark.toHtml(true));
+            return;
+        }
+
         currentSB.append("<!--");
         String remarkText = remark.getText();
         Lexer lexer = new Lexer(remarkText);
@@ -284,16 +350,38 @@ public class EWTNodeVisitor extends NodeVisitor {
 
     @Override
     public void visitStringNode(final Text string) {
+        if (visitMode == VisitMode.NONE) {
+            return;
+        }
         currentSB.append(string.toPlainTextString());
     }
 
     @Override
     public void visitTag(final Tag tag) {
-        // TODO if render has a constant none value, return do not handle the tag at all for performance reasons
+        if (visitMode == VisitMode.NONE || visitMode == VisitMode.INLINE) {
+            if (!tag.isEmptyXmlTag()) {
+                visitorPath.add(new VisitorPathElement().withTag(tag));
+            }
+            if (visitMode == VisitMode.INLINE) {
+                currentSB.append(tag.toHtml(true));
+            }
+            return;
+        }
+
+        if (renderNone(tag)) {
+            if (!tag.isEmptyXmlTag()) {
+                visitorPath.add(new VisitorPathElement().withTag(tag));
+                visitMode = VisitMode.NONE;
+                specialVisitDepth = visitorPath.size();
+            }
+            return;
+        }
+
         @SuppressWarnings("unchecked")
         Vector<PageAttribute> attributes = tag.getAttributesEx();
 
         if (isEwtNode(attributes)) {
+
             appendCurrentSBAndClear();
 
             TagNode tagNode = new TagNode(tag);
@@ -319,6 +407,10 @@ public class EWTNodeVisitor extends NodeVisitor {
             if (!tag.isEmptyXmlTag()) {
                 visitorPath.add(new VisitorPathElement().withEwtNode(tagNode).withTag(tag));
                 parentNode = tagNode;
+                if (inline(tag)) {
+                    visitMode = VisitMode.INLINE;
+                    specialVisitDepth = visitorPath.size();
+                }
             }
         } else {
             if (!tag.isEmptyXmlTag()) {
@@ -327,5 +419,4 @@ public class EWTNodeVisitor extends NodeVisitor {
             currentSB.append(tag.toTagHtml());
         }
     }
-
 }

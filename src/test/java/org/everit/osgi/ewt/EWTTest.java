@@ -70,7 +70,7 @@ public class EWTTest {
 
         try {
             CompiledTemplate compiledTemplate = engine.compileTemplate(stream, "UTF8");
-            // OutputStreamWriter writer = new OutputStreamWriter(System.out);
+            OutputStreamWriter writer = new OutputStreamWriter(System.out);
             TemplateWriter templateWriter = new TestTemplateWriter(null);
             HashMap<String, Object> vars = new HashMap<String, Object>();
 
@@ -81,7 +81,7 @@ public class EWTTest {
             vars.put("users", users);
 
             long startTime = System.nanoTime();
-            int n = 600000;
+            int n = 200000;
             for (int i = 0; i < n; i++) {
                 compiledTemplate.render(templateWriter, vars);
             }
@@ -89,7 +89,7 @@ public class EWTTest {
             System.out.println("Time: " + ((endTime - startTime) / 1000000) + "ms, "
                     + ((double) n * 1000000 / (endTime - startTime)) + " db/ms");
 
-            // writer.flush();
+            writer.flush();
         } catch (ParserException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

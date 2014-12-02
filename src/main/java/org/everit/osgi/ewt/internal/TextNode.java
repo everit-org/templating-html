@@ -22,6 +22,7 @@ import org.everit.osgi.ewt.TemplateWriter;
 import org.everit.osgi.ewt.el.ExpressionCompiler;
 import org.everit.osgi.ewt.internal.inline.CompiledInline;
 import org.everit.osgi.ewt.internal.inline.InlineCompiler;
+import org.everit.osgi.ewt.internal.inline.InlineRuntime;
 
 public class TextNode implements EWTNode {
 
@@ -29,7 +30,7 @@ public class TextNode implements EWTNode {
 
     private final String text;
 
-    public TextNode(String text, boolean inline, ExpressionCompiler expressionCompiler) {
+    public TextNode(final String text, final boolean inline, final ExpressionCompiler expressionCompiler) {
         this.text = text;
         if (!inline) {
             this.compiledInline = null;
@@ -40,9 +41,10 @@ public class TextNode implements EWTNode {
     }
 
     @Override
-    public void render(TemplateWriter writer, Map<String, Object> context) {
+    public void render(final TemplateWriter writer, final Map<String, Object> vars) {
         if (compiledInline != null) {
-
+            InlineRuntime.execute(compiledInline.getRoot(), compiledInline.getTemplate(), writer, null,
+                    new InheritantMap<String, Object>(vars));
         } else {
             writer.append(text);
         }
