@@ -17,5 +17,5 @@
 package org.everit.templating.web.internal;
 
 public enum RenderScope {
-    ALL, BODY, NONE, TAG
+    ALL, CONTENT, NONE, TAG
 }

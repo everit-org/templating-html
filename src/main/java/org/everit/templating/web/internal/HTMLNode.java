@@ -16,12 +16,9 @@
  */
 package org.everit.templating.web.internal;
 
-import java.util.Map;
 
-import org.everit.templating.web.TemplateWriter;
+public interface HTMLNode {
 
-public interface EWTNode {
-
-    void render(TemplateWriter writer, Map<String, Object> vars);
+    void render(TemplateContextImpl templateContext);
 
 }

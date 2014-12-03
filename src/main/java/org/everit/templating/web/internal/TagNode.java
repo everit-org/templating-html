@@ -23,9 +23,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.everit.templating.web.RenderException;
-import org.everit.templating.web.TemplateWriter;
-import org.everit.templating.web.el.CompiledExpression;
+import org.everit.expression.CompiledExpression;
+import org.everit.templating.RenderException;
 import org.everit.templating.web.internal.util.EWTUtil;
 import org.htmlparser.Tag;
 import org.htmlparser.lexer.PageAttribute;
@@ -49,25 +48,27 @@ public class TagNode extends ParentNode {
 
         public final Map<String, Object> prependValueMap;
 
+        public final TemplateContextImpl templateContext;
+
         public final Map<String, Object> valueMap;
 
-        public final Map<String, Object> vars;
-
-        public TagAttributeRenderContext(final Map<String, Object> vars) {
+        public TagAttributeRenderContext(final TemplateContextImpl templateContext) {
 
             @SuppressWarnings("unchecked")
-            Map<String, Object> lam = evaluateExpression(attributeMapExpressionHolder, vars, Map.class);
+            Map<String, Object> lam = evaluateExpression(attributeMapExpressionHolder, templateContext, Map.class);
             valueMap = createWrapperMap(lam);
 
             @SuppressWarnings("unchecked")
-            Map<String, Object> lapm = evaluateExpression(attributePrependMapExpressionHolder, vars, Map.class);
+            Map<String, Object> lapm = evaluateExpression(attributePrependMapExpressionHolder, templateContext,
+                    Map.class);
             prependValueMap = createWrapperMap(lapm);
 
             @SuppressWarnings("unchecked")
-            Map<String, Object> laam = evaluateExpression(attributeAppendMapExpressionHolder, vars, Map.class);
+            Map<String, Object> laam = evaluateExpression(attributeAppendMapExpressionHolder, templateContext,
+                    Map.class);
             appendValueMap = createWrapperMap(laam);
 
-            this.vars = vars;
+            this.templateContext = templateContext;
         }
 
         private Map<String, Object> createWrapperMap(final Map<String, Object> wrapped) {
@@ -117,13 +118,13 @@ public class TagNode extends ParentNode {
         }
     }
 
-    private <R> R evaluateExpression(final CompiledExpressionHolder expressionHolder, final Map<String, Object> vars,
-            final Class<R> clazz) {
+    private <R> R evaluateExpression(final CompiledExpressionHolder expressionHolder,
+            final TemplateContextImpl templateContext, final Class<R> clazz) {
         if (expressionHolder == null) {
             return null;
         }
         try {
-            Object result = expressionHolder.getCompiledExpression().eval(vars);
+            Object result = expressionHolder.getCompiledExpression().eval(templateContext.getVars());
             if (result == null) {
                 return null;
             }
@@ -143,12 +144,12 @@ public class TagNode extends ParentNode {
         }
     }
 
-    private Map<Object, Object> evaluateForeachMap(final Map<String, Object> vars) {
+    private Map<Object, Object> evaluateForeachMap(final TemplateContextImpl templateContext) {
         if (foreachExpressionHolder == null) {
             return null;
         }
         @SuppressWarnings("unchecked")
-        Map<Object, Object> result = evaluateExpression(foreachExpressionHolder, vars, Map.class);
+        Map<Object, Object> result = evaluateExpression(foreachExpressionHolder, templateContext, Map.class);
 
         return result;
     }
@@ -174,8 +175,8 @@ public class TagNode extends ParentNode {
         if (renderString.equalsIgnoreCase(RenderScope.NONE.toString())) {
             return RenderScope.NONE;
         }
-        if (renderString.equalsIgnoreCase(RenderScope.BODY.toString())) {
-            return RenderScope.BODY;
+        if (renderString.equalsIgnoreCase(RenderScope.CONTENT.toString())) {
+            return RenderScope.CONTENT;
         }
         if (renderString.equalsIgnoreCase(RenderScope.TAG.toString())) {
             return RenderScope.TAG;
@@ -184,12 +185,12 @@ public class TagNode extends ParentNode {
                 + "' of attribute: " + renderExpressionHolder.getPageAttribute().toString());
     }
 
-    private Map<String, Object> evaluateTagVariables(final Map<String, Object> vars) {
+    private Map<String, Object> evaluateTagVariables(final TemplateContextImpl templateContext) {
         if (varExpressionHolder == null) {
             return null;
         }
         CompiledExpression compiledExpression = varExpressionHolder.getCompiledExpression();
-        Object result = compiledExpression.eval(vars);
+        Object result = compiledExpression.eval(templateContext.getVars());
         if (result == null) {
             return null;
         }
@@ -276,17 +277,20 @@ public class TagNode extends ParentNode {
     }
 
     @Override
-    public void render(final TemplateWriter writer, final Map<String, Object> vars) {
-        Map<Object, Object> foreachMap = evaluateForeachMap(vars);
+    public void render(final TemplateContextImpl templateContext) {
+        Map<Object, Object> foreachMap = evaluateForeachMap(templateContext);
 
         if (foreachExpressionHolder != null && (foreachMap == null || foreachMap.size() == 0)) {
             return;
         }
 
         if (foreachMap != null) {
-            renderEach(writer, new InheritantMap<String, Object>(vars), foreachMap);
+            Map<String, Object> originalVars = templateContext.getVars();
+            templateContext.setVars(new InheritantMap<String, Object>(originalVars));
+            renderEach(templateContext, foreachMap);
+            templateContext.setVars(originalVars);
         } else {
-            renderItem(writer, vars);
+            renderItem(templateContext);
         }
     }
 
@@ -300,20 +304,20 @@ public class TagNode extends ParentNode {
         } else {
             CompiledExpressionHolder expressionHolder = renderableAttribute.getExpressionHolder();
             if (expressionHolder != null) {
-                Object attributeValueObject = evaluateExpression(expressionHolder, actx.vars,
+                Object attributeValueObject = evaluateExpression(expressionHolder, actx.templateContext,
                         Object.class);
                 attributeValue = (attributeValueObject != null) ? attributeValueObject.toString() : null;
             }
         }
 
         String prependText = resolveXPend(attributeName, actx.prependValueMap,
-                renderableAttribute.getPrependExpressionHolder(), actx.vars);
+                renderableAttribute.getPrependExpressionHolder(), actx.templateContext);
         if (prependText != null) {
             attributeValue = prependText + ((attributeValue != null) ? attributeValue : "");
         }
 
         String appendText = resolveXPend(attributeName, actx.appendValueMap,
-                renderableAttribute.getAppendExpressionHolder(), actx.vars);
+                renderableAttribute.getAppendExpressionHolder(), actx.templateContext);
         if (appendText != null) {
             attributeValue = ((attributeValue != null) ? attributeValue : "") + appendText;
         }
@@ -348,7 +352,7 @@ public class TagNode extends ParentNode {
         }
     }
 
-    private void renderEach(final TemplateWriter writer, final Map<String, Object> vars,
+    private void renderEach(final TemplateContextImpl templateContext,
             final Map<Object, Object> foreachMap) {
 
         Set<Entry<Object, Object>> entrySet = foreachMap.entrySet();
@@ -398,19 +402,20 @@ public class TagNode extends ParentNode {
             i++;
         }
 
-        renderEachRecurse(writer, vars, items, 0);
+        renderEachRecurse(templateContext, items, 0);
 
     }
 
-    private void renderEachRecurse(final TemplateWriter writer, final Map<String, Object> vars,
+    private void renderEachRecurse(final TemplateContextImpl templateContext,
             final ForeachItem[] items,
             final int mapEntryIndex) {
 
         if (mapEntryIndex == items.length) {
-            renderItem(writer, vars);
+            renderItem(templateContext);
         } else {
             ForeachItem item = items[mapEntryIndex];
             Object collectionObject = item.collection;
+            Map<String, Object> vars = templateContext.getVars();
             if (collectionObject instanceof Iterable) {
                 Iterable<?> iterable = (Iterable<?>) collectionObject;
                 Iterator<?> iterator = iterable.iterator();
@@ -418,7 +423,7 @@ public class TagNode extends ParentNode {
                 while (iterator.hasNext()) {
                     Object value = iterator.next();
                     assignForEachVariables(vars, item, i, value);
-                    renderEachRecurse(writer, vars, items, mapEntryIndex + 1);
+                    renderEachRecurse(templateContext, items, mapEntryIndex + 1);
                     i++;
                 }
             } else if (collectionObject instanceof byte[]) {
@@ -426,63 +431,63 @@ public class TagNode extends ParentNode {
                 for (int i = 0; i < collectionObject2.length; i++) {
                     byte value = collectionObject2[i];
                     assignForEachVariables(vars, item, i, value);
-                    renderEachRecurse(writer, vars, items, mapEntryIndex + 1);
+                    renderEachRecurse(templateContext, items, mapEntryIndex + 1);
                 }
             } else if (collectionObject instanceof boolean[]) {
                 boolean[] collectionObject2 = (boolean[]) collectionObject;
                 for (int i = 0; i < collectionObject2.length; i++) {
                     boolean value = collectionObject2[i];
                     assignForEachVariables(vars, item, i, value);
-                    renderEachRecurse(writer, vars, items, mapEntryIndex + 1);
+                    renderEachRecurse(templateContext, items, mapEntryIndex + 1);
                 }
             } else if (collectionObject instanceof char[]) {
                 char[] collectionObject2 = (char[]) collectionObject;
                 for (int i = 0; i < collectionObject2.length; i++) {
                     char value = collectionObject2[i];
                     assignForEachVariables(vars, item, i, value);
-                    renderEachRecurse(writer, vars, items, mapEntryIndex + 1);
+                    renderEachRecurse(templateContext, items, mapEntryIndex + 1);
                 }
             } else if (collectionObject instanceof double[]) {
                 double[] collectionObject2 = (double[]) collectionObject;
                 for (int i = 0; i < collectionObject2.length; i++) {
                     double value = collectionObject2[i];
                     assignForEachVariables(vars, item, i, value);
-                    renderEachRecurse(writer, vars, items, mapEntryIndex + 1);
+                    renderEachRecurse(templateContext, items, mapEntryIndex + 1);
                 }
             } else if (collectionObject instanceof float[]) {
                 float[] collectionObject2 = (float[]) collectionObject;
                 for (int i = 0; i < collectionObject2.length; i++) {
                     float value = collectionObject2[i];
                     assignForEachVariables(vars, item, i, value);
-                    renderEachRecurse(writer, vars, items, mapEntryIndex + 1);
+                    renderEachRecurse(templateContext, items, mapEntryIndex + 1);
                 }
             } else if (collectionObject instanceof int[]) {
                 int[] collectionObject2 = (int[]) collectionObject;
                 for (int i = 0; i < collectionObject2.length; i++) {
                     int value = collectionObject2[i];
                     assignForEachVariables(vars, item, i, value);
-                    renderEachRecurse(writer, vars, items, mapEntryIndex + 1);
+                    renderEachRecurse(templateContext, items, mapEntryIndex + 1);
                 }
             } else if (collectionObject instanceof long[]) {
                 long[] collectionObject2 = (long[]) collectionObject;
                 for (int i = 0; i < collectionObject2.length; i++) {
                     long value = collectionObject2[i];
                     assignForEachVariables(vars, item, i, value);
-                    renderEachRecurse(writer, vars, items, mapEntryIndex + 1);
+                    renderEachRecurse(templateContext, items, mapEntryIndex + 1);
                 }
             } else if (collectionObject instanceof short[]) {
                 short[] collectionObject2 = (short[]) collectionObject;
                 for (int i = 0; i < collectionObject2.length; i++) {
                     short value = collectionObject2[i];
                     assignForEachVariables(vars, item, i, value);
-                    renderEachRecurse(writer, vars, items, mapEntryIndex + 1);
+                    renderEachRecurse(templateContext, items, mapEntryIndex + 1);
                 }
             } else if (collectionObject instanceof Object[]) {
                 Object[] collectionObject2 = (Object[]) collectionObject;
                 for (int i = 0; i < collectionObject2.length; i++) {
                     Object value = collectionObject2[i];
                     assignForEachVariables(vars, item, i, value);
-                    renderEachRecurse(writer, vars, items, mapEntryIndex + 1);
+                    renderEachRecurse(templateContext, items, mapEntryIndex + 1);
                 }
             } else {
                 // TODO throw nice exception
@@ -490,40 +495,49 @@ public class TagNode extends ParentNode {
         }
     }
 
-    private void renderItem(final TemplateWriter writer, final Map<String, Object> vars) {
-        Map<String, Object> tagVars = evaluateTagVariables(vars);
+    private void renderItem(final TemplateContextImpl templateContext) {
+        Map<String, Object> tagVars = evaluateTagVariables(templateContext);
 
-        Map<String, Object> scopedVars = vars;
+        Map<String, Object> originalVars = templateContext.getVars();
+
+        Map<String, Object> scopedVars = originalVars;
         if (tagVars != null && tagVars.size() > 0) {
-            scopedVars = new InheritantMap<String, Object>(vars);
+            scopedVars = new InheritantMap<String, Object>(templateContext.getVars());
+            templateContext.setVars(scopedVars);
             scopedVars.putAll(tagVars);
         }
 
         RenderScope render = evaluateRender(scopedVars);
         if (render == RenderScope.NONE) {
+            templateContext.setVars(originalVars);
             return;
         }
 
         String text = null;
-        if (render == RenderScope.ALL || render == RenderScope.BODY) {
+        if (render == RenderScope.ALL || render == RenderScope.CONTENT) {
             text = evaluateText(scopedVars);
         }
 
         if (render == RenderScope.ALL || render == RenderScope.TAG) {
-            renderTag(writer, scopedVars, text, render == RenderScope.ALL);
+            renderTag(templateContext, text, render == RenderScope.ALL);
         } else {
+
             if (text != null) {
-                writer.append(text);
+                templateContext.getWriter().append(text);
             } else {
-                renderChildren(writer, scopedVars);
+                renderChildren(templateContext);
             }
         }
 
+        templateContext.setVars(originalVars);
+
     }
 
-    private void renderRemainingAttribute(final TemplateWriter writer, final String attributeName,
+    private void renderRemainingAttribute(final TemplateContextImpl templateContext, final String attributeName,
             final Object prepend,
             final Object attributeValue, final Object append) {
+
+        TemplateWriter writer = templateContext.getWriter();
 
         if (attributeName == null || (prepend == null && attributeValue == null && append == null)) {
             return;
@@ -558,7 +572,7 @@ public class TagNode extends ParentNode {
      * @param attributeCtx
      *            The context of the tag attributes.
      */
-    private void renderRemainingAttributesFromMaps(final TemplateWriter writer, final Map<String, Object> vars,
+    private void renderRemainingAttributesFromMaps(final TemplateContextImpl templateContext,
             final TagAttributeRenderContext attributeCtx) {
 
         Map<String, Object> valueMap = attributeCtx.valueMap;
@@ -571,7 +585,7 @@ public class TagNode extends ParentNode {
             iterator.remove();
             String attributeName = entry.getKey();
             Object attributeValue = entry.getValue();
-            renderRemainingAttribute(writer, attributeName, prependMap.remove(attributeName), attributeValue,
+            renderRemainingAttribute(templateContext, attributeName, prependMap.remove(attributeName), attributeValue,
                     appendMap.remove(attributeName));
         }
 
@@ -582,7 +596,7 @@ public class TagNode extends ParentNode {
             String attributeName = entry.getKey();
             Object prepend = entry.getValue();
 
-            renderRemainingAttribute(writer, attributeName, prepend, null, appendMap.remove(attributeName));
+            renderRemainingAttribute(templateContext, attributeName, prepend, null, appendMap.remove(attributeName));
         }
 
         iterator = appendMap.entrySet().iterator();
@@ -592,25 +606,26 @@ public class TagNode extends ParentNode {
             String attributeName = entry.getKey();
             Object append = entry.getValue();
 
-            renderRemainingAttribute(writer, attributeName, null, null, append);
+            renderRemainingAttribute(templateContext, attributeName, null, null, append);
         }
     }
 
-    private void renderTag(final TemplateWriter writer, final Map<String, Object> vars, final String text,
+    private void renderTag(final TemplateContextImpl templateContext, final String text,
             final boolean renderBody) {
+        TemplateWriter writer = templateContext.getWriter();
         writer.append("<").append(tagName);
 
-        TagAttributeRenderContext attributeCtx = new TagAttributeRenderContext(vars);
+        TagAttributeRenderContext attributeCtx = new TagAttributeRenderContext(templateContext);
 
         Iterator<Entry<String, RenderableAttribute>> iterator = renderableAttributes.entrySet().iterator();
         while (iterator.hasNext()) {
             Entry<String, RenderableAttribute> entry = iterator.next();
             String attributeName = entry.getKey();
             RenderableAttribute renderableAttribute = entry.getValue();
-            renderAttribute(writer, attributeName, renderableAttribute, attributeCtx);
+            renderAttribute(templateContext.getWriter(), attributeName, renderableAttribute, attributeCtx);
         }
 
-        renderRemainingAttributesFromMaps(writer, vars, attributeCtx);
+        renderRemainingAttributesFromMaps(templateContext, attributeCtx);
 
         if (!renderBody || (text == null && getChildren().size() == 0)) {
             if (endTag != null) {
@@ -626,7 +641,7 @@ public class TagNode extends ParentNode {
             if (text != null) {
                 writer.append(text);
             } else {
-                renderChildren(writer, vars);
+                renderChildren(templateContext);
             }
             if (tag.isEmptyXmlTag()) {
                 writer.append("</").append(tagName).append(">");
@@ -638,7 +653,7 @@ public class TagNode extends ParentNode {
     }
 
     private String resolveXPend(final String attributeName, final Map<String, Object> xpendValueMap,
-            final CompiledExpressionHolder xpendExpressionHolder, final Map<String, Object> vars) {
+            final CompiledExpressionHolder xpendExpressionHolder, final TemplateContextImpl templateContext) {
 
         String xpend = null;
 
@@ -646,7 +661,7 @@ public class TagNode extends ParentNode {
             Object xpendObject = xpendValueMap.remove(attributeName);
             xpend = (xpendObject != null) ? xpendObject.toString() : null;
         } else if (xpendExpressionHolder != null) {
-            Object xpendObject = evaluateExpression(xpendExpressionHolder, vars, Object.class);
+            Object xpendObject = evaluateExpression(xpendExpressionHolder, templateContext, Object.class);
             xpend = (xpendObject != null) ? xpendObject.toString() : null;
         }
         return xpend;

@@ -19,8 +19,7 @@ package org.everit.templating.web.internal;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.everit.templating.web.CompileException;
-import org.everit.templating.web.TemplateWriter;
+import org.everit.expression.CompileException;
 
 public class RootNode extends ParentNode {
 
@@ -46,7 +45,7 @@ public class RootNode extends ParentNode {
     }
 
     @Override
-    public void render(final TemplateWriter sb, final Map<String, Object> vars) {
-        renderChildren(sb, vars);
+    public void render(final TemplateContextImpl templateContext) {
+        renderChildren(templateContext);
     }
 }

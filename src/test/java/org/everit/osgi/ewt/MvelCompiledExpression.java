@@ -19,7 +19,7 @@ package org.everit.osgi.ewt;
 import java.io.Serializable;
 import java.util.Map;
 
-import org.everit.templating.web.el.CompiledExpression;
+import org.everit.expression.CompiledExpression;
 import org.mvel2.MVEL;
 
 public class MvelCompiledExpression implements CompiledExpression {

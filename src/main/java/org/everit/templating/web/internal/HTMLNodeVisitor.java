@@ -23,8 +23,9 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Vector;
 
-import org.everit.templating.web.CompileException;
-import org.everit.templating.web.el.ExpressionCompiler;
+import org.everit.expression.CompileException;
+import org.everit.expression.ExpressionCompiler;
+import org.everit.templating.TemplateCompiler;
 import org.everit.templating.web.internal.util.EWTUtil;
 import org.htmlparser.Node;
 import org.htmlparser.Remark;
@@ -35,7 +36,7 @@ import org.htmlparser.lexer.PageAttribute;
 import org.htmlparser.util.ParserException;
 import org.htmlparser.visitors.NodeVisitor;
 
-public class EWTNodeVisitor extends NodeVisitor {
+public class HTMLNodeVisitor extends NodeVisitor {
 
     private enum VisitMode {
         INLINE, NONE, NORMAL
@@ -72,6 +73,8 @@ public class EWTNodeVisitor extends NodeVisitor {
 
     private final ExpressionCompiler expressionCompiler;
 
+    private final TemplateCompiler inlineCompiler;
+
     private ParentNode parentNode;
 
     private final RootNode rootNode;
@@ -82,18 +85,20 @@ public class EWTNodeVisitor extends NodeVisitor {
 
     private LinkedList<VisitorPathElement> visitorPath = new LinkedList<VisitorPathElement>();
 
-    public EWTNodeVisitor(final String ewtAttributePrefix, final ExpressionCompiler expressionCompiler) {
+    public HTMLNodeVisitor(final String ewtAttributePrefix, final ExpressionCompiler expressionCompiler,
+            final TemplateCompiler inlineCompiler) {
         this.ewtAttributePrefix = ewtAttributePrefix;
-        this.expressionCompiler = expressionCompiler;
+        this.inlineCompiler = inlineCompiler;
         this.rootNode = new RootNode();
         this.parentNode = rootNode;
+        this.expressionCompiler = expressionCompiler;
         visitorPath.add(new VisitorPathElement().withEwtNode(rootNode));
 
     }
 
     private void appendCurrentSBAndClear() {
         if (currentSB.length() > 0) {
-            parentNode.getChildren().add(new TextNode(currentSB.toString(), false, expressionCompiler));
+            parentNode.getChildren().add(new TextNode(currentSB.toString(), false, inlineCompiler));
             currentSB = new StringBuilder();
         }
     }
@@ -115,7 +120,7 @@ public class EWTNodeVisitor extends NodeVisitor {
             String ewtAttributeName = attributeName.substring(ewtAttributePrefix.length());
             if (ewtAttributeName.equals("bookmark")) {
                 rootNode.addBookmark(EWTUtil.unescape(attribute.getValue()), tagNode);
-            } else if (ewtAttributeName.equals("each")) {
+            } else if (ewtAttributeName.equals("foreach")) {
                 throwIfAttributeAlreadyDefined(attribute, tagNode.getForeachExpressionHolder(), tagNode);
                 tagNode.setForeachExpressionHolder(compileExpression(attribute));
             } else if (ewtAttributeName.equals("var")) {
@@ -156,7 +161,8 @@ public class EWTNodeVisitor extends NodeVisitor {
                 throwIfAttributeAlreadyDefined(attribute, renderableAttribute.getPrependExpressionHolder(), tagNode);
                 renderableAttribute.setPrependExpressionHolder(compileExpression(attribute));
                 renderableAttribute.setPrependPageAttribute(attribute);
-                if (renderableAttribute.getExpressionHolder() == null && renderableAttribute.getConstantValue() == null) {
+                if (renderableAttribute.getExpressionHolder() == null
+                        && renderableAttribute.getConstantValue() == null) {
                     renderableAttribute.setPreviousText(textBeforeAttribute);
                 }
             } else if (ewtAttributeName.startsWith("attrappend-")) {
@@ -168,6 +174,8 @@ public class EWTNodeVisitor extends NodeVisitor {
                 if (renderableAttribute.getPreviousText() == null) {
                     renderableAttribute.setPreviousText(textBeforeAttribute);
                 }
+            } else {
+                // TODO throw exception
             }
         } else {
             RenderableAttribute renderableAttribute = getOrCreateRenderableAttribute(attributeName, tagNode, attribute);
@@ -267,7 +275,7 @@ public class EWTNodeVisitor extends NodeVisitor {
                 currentSB.append(tag.toHtml(true));
                 return;
             }
-            parentNode.getChildren().add(new TextNode(currentSB.toString(), true, expressionCompiler));
+            parentNode.getChildren().add(new TextNode(currentSB.toString(), true, inlineCompiler));
             currentSB = new StringBuilder();
             visitMode = VisitMode.NORMAL;
         }
@@ -276,7 +284,7 @@ public class EWTNodeVisitor extends NodeVisitor {
             currentSB.append(tag.toHtml(true));
         } else {
             if (currentSB.length() > 0) {
-                parentNode.getChildren().add(new TextNode(currentSB.toString(), false, expressionCompiler));
+                parentNode.getChildren().add(new TextNode(currentSB.toString(), false, inlineCompiler));
                 currentSB = new StringBuilder();
             }
 
@@ -323,7 +331,7 @@ public class EWTNodeVisitor extends NodeVisitor {
             throw new CompileException("Error during compiling remark: " + remark.toHtml(true));
         }
         visitorPath = previousVisitorPath;
-        List<EWTNode> remarkNodes = parentNode.getChildren();
+        List<HTMLNode> remarkNodes = parentNode.getChildren();
         parentNode = previousParent;
         parentNode.getChildren().addAll(remarkNodes);
 

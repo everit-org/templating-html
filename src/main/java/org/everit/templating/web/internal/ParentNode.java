@@ -18,21 +18,18 @@ package org.everit.templating.web.internal;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
-import org.everit.templating.web.TemplateWriter;
+public abstract class ParentNode implements HTMLNode {
 
-public abstract class ParentNode implements EWTNode {
+    private final List<HTMLNode> children = new ArrayList<HTMLNode>();
 
-    private final List<EWTNode> children = new ArrayList<EWTNode>();
-
-    public List<EWTNode> getChildren() {
+    public List<HTMLNode> getChildren() {
         return children;
     }
 
-    protected void renderChildren(TemplateWriter writer, Map<String, Object> vars) {
-        for (EWTNode ewtNode : children) {
-            ewtNode.render(writer, vars);
+    protected void renderChildren(final TemplateContextImpl templateContext) {
+        for (HTMLNode ewtNode : children) {
+            ewtNode.render(templateContext);
         }
     }
 }

@@ -18,9 +18,9 @@
 -->
 <!--
   bookmark: Bookmarking an item (when a bookmark is directly rendered, the ewt_directAccess variable is set to true).
-  each: iteration
+  foreach: iteration
   var:
-  render: all, body, tag, none; e.g.: ewt-render="(ewt_directAccess) ? 'body' : 'none'"
+  render: all, content, tag, none; e.g.: ewt-render="(ewt_context.bookmark = 'bookmark1') ? 'body' : 'none'"
   text: Alternative content for the tag
   utext: Unescaped alternative content for the tag.
   attr: Map, attribute values
@@ -29,17 +29,18 @@
   attrprepend-*:
   attrappend:
   attrappend-*:
-  parsebody: default false
+  parsecontent: default false
 -->
 <html>
 <head />
 <body>
-  <table id='fddd' data-ewt-bookmark="bookmark1" data-ewt-attr="['id' : myId + 'myTable']" data-ewt-render="()">
-    <tr data-ewt-each="[({'user', 'userIndex'}) : users]"
+  <table id='fddd' data-ewt-bookmark="bookmark1" data-ewt-attr="['id' : 'myTable']" data-ewt-render="'all'">
+    <tr data-ewt-foreach="[({'user'}) : users]"
         data-ewt-var="['rowId' : user.userId]"
         data-ewt-attr="['id' : user]">
       <td><span data-ewt-text="user.firstName">John</span></td>
       <td><span data-ewt-utext="user.lastName">Doe</span></td>
+      <td data-ewt-utext="ewt_context.render('bookmark1')" />
       <td><div data-ewt-text="'someText'" /></td>
       <td id="shouldNotAppear" data-ewt-attr-id="null">
         
@@ -52,8 +53,9 @@
 <p>Welcome to Internet Explorer 8.</p>
 <![endif]-->
 
-  <script type="text/ewt-javascript" data-ewt-parsebody="true" data-ewt-attr="['type' : 'text/javascript']">
-    @{users.size()}(rowId) {
+  <script type="text/ewt-javascript" data-ewt-parsecontent="true" data-ewt-attr="['type' : 'text/javascript']">
+    @{
+		  usersss.size()}(rowId) {
       
       ewt.reRender();
     }
@@ -65,6 +67,4 @@
 </html>
 <!-- 
   <a href="" data-ewt-attr-href="&apos;http://everit.org&apos;" />
-  
-  Some text in the end
  -->

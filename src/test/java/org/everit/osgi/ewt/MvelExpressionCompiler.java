@@ -18,8 +18,8 @@ package org.everit.osgi.ewt;
 
 import java.io.Serializable;
 
-import org.everit.templating.web.el.CompiledExpression;
-import org.everit.templating.web.el.ExpressionCompiler;
+import org.everit.expression.CompiledExpression;
+import org.everit.expression.ExpressionCompiler;
 import org.mvel2.MVEL;
 
 public class MvelExpressionCompiler implements ExpressionCompiler {

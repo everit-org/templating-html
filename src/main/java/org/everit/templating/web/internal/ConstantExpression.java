@@ -18,7 +18,7 @@ package org.everit.templating.web.internal;
 
 import java.util.Map;
 
-import org.everit.templating.web.el.CompiledExpression;
+import org.everit.expression.CompiledExpression;
 
 public class ConstantExpression implements CompiledExpression {
 

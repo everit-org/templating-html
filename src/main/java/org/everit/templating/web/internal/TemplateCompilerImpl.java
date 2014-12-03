@@ -14,14 +14,15 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Everit - Web Templating.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.everit.templating.web;
+package org.everit.templating.web.internal;
 
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 
-import org.everit.templating.web.el.ExpressionCompiler;
-import org.everit.templating.web.internal.CompiledTemplateImpl;
-import org.everit.templating.web.internal.EWTNodeVisitor;
+import org.everit.expression.CompileException;
+import org.everit.expression.ExpressionCompiler;
+import org.everit.expression.ParserContext;
+import org.everit.templating.CompiledTemplate;
 import org.htmlparser.Node;
 import org.htmlparser.lexer.Lexer;
 import org.htmlparser.lexer.Page;
@@ -31,7 +32,7 @@ import org.htmlparser.util.ParserException;
  * This is the entry class that can compile templates.
  *
  */
-public class TemplateCompiler {
+public class TemplateCompilerImpl {
 
     /**
      * The prefix of the Web Templating attributes. By default it is "data-ewt-".
@@ -49,7 +50,7 @@ public class TemplateCompiler {
      * @param expressionCompiler
      *            The compiler of expressions.
      */
-    public TemplateCompiler(final ExpressionCompiler expressionCompiler) {
+    public TemplateCompilerImpl(final ExpressionCompiler expressionCompiler) {
         this("data-ewt-", expressionCompiler);
     }
 
@@ -62,7 +63,7 @@ public class TemplateCompiler {
      * @param expressionCompiler
      *            The compiler of the expressions.
      */
-    public TemplateCompiler(final String ewtAttributeprefix, final ExpressionCompiler expressionCompiler) {
+    public TemplateCompilerImpl(final String ewtAttributeprefix, final ExpressionCompiler expressionCompiler) {
         this.ewtAttributeprefix = ewtAttributeprefix;
         this.expressionCompiler = expressionCompiler;
     }
@@ -89,17 +90,22 @@ public class TemplateCompiler {
     }
 
     public CompiledTemplate compileTemplate(final String template) {
+        this(template, null);
+    }
+
+    public CompiledTemplate compileTemplate(final String template, final ParserContext parserContext) {
         Page page = new Page(template);
         try {
-            return compileTemplateInternal(page);
+            return compileTemplateInternal(page, new ParserContext(parserContext));
         } catch (ParserException e) {
             throw new CompileException(e);
         }
     }
 
-    private CompiledTemplate compileTemplateInternal(final Page page) throws ParserException {
+    private CompiledTemplate compileTemplateInternal(final Page page, final ParserContext parserContext)
+            throws ParserException {
         Lexer lexer = new Lexer(page);
-        EWTNodeVisitor visitor = new EWTNodeVisitor(ewtAttributeprefix, expressionCompiler);
+        HTMLNodeVisitor visitor = new HTMLNodeVisitor(ewtAttributeprefix, expressionCompiler);
         visitor.beginParsing();
         for (Node node = lexer.nextNode(); node != null; node = lexer.nextNode()) {
             node.accept(visitor);

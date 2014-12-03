@@ -16,37 +16,32 @@
  */
 package org.everit.templating.web.internal;
 
-import java.util.Map;
+import java.io.StringReader;
 
-import org.everit.templating.web.TemplateWriter;
-import org.everit.templating.web.el.ExpressionCompiler;
-import org.everit.templating.web.internal.inline.CompiledInline;
-import org.everit.templating.web.internal.inline.InlineCompiler;
-import org.everit.templating.web.internal.inline.InlineRuntime;
+import org.everit.templating.CompiledTemplate;
+import org.everit.templating.TemplateCompiler;
 
-public class TextNode implements EWTNode {
+public class TextNode implements HTMLNode {
 
-    private final CompiledInline compiledInline;
+    private CompiledTemplate compiledInline;
 
     private final String text;
 
-    public TextNode(final String text, final boolean inline, final ExpressionCompiler expressionCompiler) {
+    public TextNode(final String text, final boolean inline, final TemplateCompiler templateCompiler) {
         this.text = text;
         if (!inline) {
             this.compiledInline = null;
         } else {
-            this.compiledInline = InlineCompiler.compileTemplate(text, expressionCompiler);
+            this.compiledInline = templateCompiler.compile(new StringReader(text));
         }
-
     }
 
     @Override
-    public void render(final TemplateWriter writer, final Map<String, Object> vars) {
+    public void render(final TemplateContextImpl templateContext) {
         if (compiledInline != null) {
-            InlineRuntime.execute(compiledInline.getRoot(), compiledInline.getTemplate(), writer, null,
-                    new InheritantMap<String, Object>(vars));
+            compiledInline.render(templateContext.getWriter().getWrapped(), templateContext.getVars());
         } else {
-            writer.append(text);
+            templateContext.getWriter().append(text);
         }
     }
 

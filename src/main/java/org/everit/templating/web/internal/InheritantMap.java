@@ -21,8 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import org.everit.templating.web.EWTConstants;
-import org.everit.templating.web.RenderException;
+import org.everit.templating.TemplateConstants;
 
 public class InheritantMap<K, V> implements Map<K, V> {
 
@@ -134,20 +133,29 @@ public class InheritantMap<K, V> implements Map<K, V> {
 
     @Override
     public V put(final K key, final V value) {
-        if (EWTConstants.EWT_CONTEXT.equals(key)) {
-            throw new RenderException("ewt_context is a reserved word");
+        if (TemplateConstants.VAR_TEMPLATE_CONTEXT.equals(key)) {
+            throw new ReservedWordException("'" + TemplateConstants.VAR_TEMPLATE_CONTEXT + "' is a reserved word");
         }
         return internalMap.put(key, value);
     }
 
     @Override
     public void putAll(final Map<? extends K, ? extends V> m) {
-        if (m.containsKey(EWTConstants.EWT_CONTEXT)) {
-            throw new RenderException("ewt_context is a reserved word");
+        if (m.containsKey(TemplateConstants.VAR_TEMPLATE_CONTEXT)) {
+            throw new ReservedWordException("'" + TemplateConstants.VAR_TEMPLATE_CONTEXT + "' is a reserved word");
         }
         internalMap.putAll(m);
     }
 
+    /**
+     * Same as {@link #put(Object, Object)} but without checking reserved words.
+     * 
+     * @param key
+     *            The key.
+     * @param value
+     *            The value.
+     * @return The previous value if existed.
+     */
     V putInternal(final K key, final V value) {
         return internalMap.put(key, value);
     }

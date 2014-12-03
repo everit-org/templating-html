@@ -16,11 +16,11 @@
  */
 package org.everit.templating.web.internal;
 
+import java.io.Writer;
 import java.util.Map;
 
-import org.everit.templating.web.CompiledTemplate;
-import org.everit.templating.web.EWTConstants;
-import org.everit.templating.web.TemplateWriter;
+import org.everit.templating.CompiledTemplate;
+import org.everit.templating.TemplateConstants;
 
 public class CompiledTemplateImpl implements CompiledTemplate {
 
@@ -31,24 +31,29 @@ public class CompiledTemplateImpl implements CompiledTemplate {
     }
 
     @Override
-    public void render(final TemplateWriter writer, final Map<String, Object> vars) {
+    public void render(final Writer writer, final Map<String, Object> vars) {
         render(writer, vars, null);
     }
 
     @Override
-    public void render(final TemplateWriter writer, final Map<String, Object> vars, final String bookmark) {
+    public void render(final Writer writer, final Map<String, Object> vars, final String bookmark) {
+        ParentNode parentNode;
+        String evaluatedBookmark = bookmark;
+
         if (bookmark == null) {
-            InheritantMap<String, Object> scopedVars = new InheritantMap<String, Object>(vars);
-            scopedVars.putInternal(EWTConstants.EWT_CONTEXT, new EWTContext("root"));
-            rootNode.render(writer, vars);
+            parentNode = rootNode;
+            evaluatedBookmark = TemplateConstants.BOOKMARK_ROOT;
         } else {
-            ParentNode parentNode = rootNode.getBookmark(bookmark);
+            parentNode = rootNode.getBookmark(bookmark);
             if (parentNode == null) {
                 return;
             }
-            InheritantMap<String, Object> scopedVars = new InheritantMap<String, Object>(vars);
-            scopedVars.putInternal(EWTConstants.EWT_CONTEXT, new EWTContext(bookmark));
-            parentNode.render(writer, scopedVars);
         }
+
+        InheritantMap<String, Object> scopedVars = new InheritantMap<String, Object>(vars);
+        TemplateContextImpl templateContext = new TemplateContextImpl(this, evaluatedBookmark, scopedVars, writer);
+        scopedVars.putInternal(TemplateConstants.VAR_TEMPLATE_CONTEXT,
+                templateContext);
+        parentNode.render(templateContext);
     }
 }

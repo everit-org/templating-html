@@ -16,16 +16,25 @@
  */
 package org.everit.templating.web.internal;
 
-public class EWTContext {
+import org.everit.expression.CompiledExpression;
+import org.htmlparser.lexer.PageAttribute;
 
-    private final String bookmark;
+public class HTMLAttribute {
 
-    public EWTContext(final String bookmark) {
-        this.bookmark = bookmark;
+    private final CompiledExpression expression;
+
+    private final PageAttribute pageAttribute;
+
+    public HTMLAttribute(final PageAttribute pageAttribute, final CompiledExpression expression) {
+        this.pageAttribute = pageAttribute;
+        this.expression = expression;
     }
 
-    public String getBookmark() {
-        return bookmark;
+    public CompiledExpression getExpression() {
+        return expression;
     }
 
+    public PageAttribute getPageAttribute() {
+        return pageAttribute;
+    }
 }

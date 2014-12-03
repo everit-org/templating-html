@@ -16,7 +16,7 @@
  */
 package org.everit.templating.web.internal;
 
-import org.everit.templating.web.el.CompiledExpression;
+import org.everit.expression.CompiledExpression;
 import org.htmlparser.lexer.PageAttribute;
 
 public class CompiledExpressionHolder {

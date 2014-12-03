@@ -23,9 +23,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import org.everit.templating.web.CompiledTemplate;
-import org.everit.templating.web.TemplateCompiler;
-import org.everit.templating.web.TemplateWriter;
+import org.everit.templating.CompiledTemplate;
+import org.everit.templating.TemplateCompiler;
+import org.everit.templating.TemplateWriter;
 import org.junit.Test;
 
 public class EWTTest {
