@@ -1,20 +1,20 @@
 /**
- * This file is part of Everit - Web Templating.
+ * This file is part of Everit - HTML Templating.
  *
- * Everit - Web Templating is free software: you can redistribute it and/or modify
+ * Everit - HTML Templating is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * Everit - Web Templating is distributed in the hope that it will be useful,
+ * Everit - HTML Templating is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * along with Everit - Web Templating.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Everit - HTML Templating.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.everit.templating.web.internal;
+package org.everit.templating.html.internal;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -24,7 +24,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.everit.expression.CompiledExpression;
-import org.everit.templating.web.internal.util.EWTUtil;
+import org.everit.templating.html.internal.util.HTMLTemplatingUtil;
 import org.htmlparser.Tag;
 import org.htmlparser.lexer.PageAttribute;
 
@@ -228,11 +228,11 @@ public class TagNode extends ParentNode {
                 }
                 String textString = text.toString();
                 if (escapeText) {
-                    textString = EWTUtil.escape(textString);
+                    textString = HTMLTemplatingUtil.escape(textString);
                 }
                 return textString;
             } catch (RuntimeException e) {
-                throw new RuntimeException();
+                throw new RuntimeException(e);
                 // TODO throw nice exception
                 // throw new RenderException("Error during evaluating attribute: "
                 // + textExpressionHolder.getPageAttribute().toString(), e);
@@ -356,7 +356,7 @@ public class TagNode extends ParentNode {
                 quote = pageAttribute.getQuote();
             }
             String quoteString = String.valueOf(quote);
-            writer.append(assigment).append(quoteString).append(EWTUtil.escape(attributeValue)).append(quoteString);
+            writer.append(assigment).append(quoteString).append(HTMLTemplatingUtil.escape(attributeValue)).append(quoteString);
         }
     }
 
@@ -563,7 +563,7 @@ public class TagNode extends ParentNode {
         if (append != null) {
             attributeValueSB.append(append);
         }
-        writer.append(EWTUtil.escape(attributeValueSB.toString()));
+        writer.append(HTMLTemplatingUtil.escape(attributeValueSB.toString()));
 
         writer.append("\"");
 

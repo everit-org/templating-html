@@ -1,4 +1,20 @@
-package org.everit.templating.web.internal;
+/**
+ * This file is part of Everit - HTML Templating.
+ *
+ * Everit - HTML Templating is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Everit - HTML Templating is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Everit - HTML Templating.  If not, see <http://www.gnu.org/licenses/>.
+ */
+package org.everit.templating.html.internal;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -69,8 +85,7 @@ public class ReaderSource extends Source {
 
     @Override
     public String getString(final int offset, final int length) throws IOException {
-        buffer.substring(offset, offset + length);
-        return null;
+        return buffer.substring(offset, offset + length);
     }
 
     @Override
@@ -120,6 +135,9 @@ public class ReaderSource extends Source {
         int r = 0;
         if (left > 0) {
             r = reader.read(cbuf, availableFromBuffer, left);
+            if (r > 0) {
+                buffer.append(cbuf, availableFromBuffer, r);
+            }
             if (r > -1) {
                 left -= r;
             }

@@ -1,20 +1,20 @@
 /**
- * This file is part of Everit - Web Templating.
+ * This file is part of Everit - HTML Templating.
  *
- * Everit - Web Templating is free software: you can redistribute it and/or modify
+ * Everit - HTML Templating is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * Everit - Web Templating is distributed in the hope that it will be useful,
+ * Everit - HTML Templating is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * along with Everit - Web Templating.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Everit - HTML Templating.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.everit.templating.web.internal;
+package org.everit.templating.html.internal;
 
 import java.io.StringReader;
 import java.util.Iterator;
@@ -27,7 +27,7 @@ import java.util.Vector;
 import org.everit.expression.ExpressionCompiler;
 import org.everit.templating.CompiledTemplate;
 import org.everit.templating.TemplateCompiler;
-import org.everit.templating.web.internal.util.EWTUtil;
+import org.everit.templating.html.internal.util.HTMLTemplatingUtil;
 import org.htmlparser.Node;
 import org.htmlparser.Remark;
 import org.htmlparser.Tag;
@@ -109,7 +109,7 @@ public class HTMLNodeVisitor extends NodeVisitor {
     private CompiledExpressionHolder compileExpression(final PageAttribute attribute) {
         try {
             String attributeValue = attribute.getValue();
-            attributeValue = EWTUtil.unescape(attributeValue);
+            attributeValue = HTMLTemplatingUtil.unescape(attributeValue);
             return new CompiledExpressionHolder(expressionCompiler.compile(attributeValue), attribute);
         } catch (RuntimeException e) {
             e.printStackTrace();
@@ -124,7 +124,7 @@ public class HTMLNodeVisitor extends NodeVisitor {
         if (attributeName.startsWith(ewtAttributePrefix)) {
             String ewtAttributeName = attributeName.substring(ewtAttributePrefix.length());
             if (ewtAttributeName.equals("bookmark")) {
-                rootNode.addBookmark(EWTUtil.unescape(attribute.getValue()), tagNode);
+                rootNode.addBookmark(HTMLTemplatingUtil.unescape(attribute.getValue()), tagNode);
             } else if (ewtAttributeName.equals("foreach")) {
                 throwIfAttributeAlreadyDefined(attribute, tagNode.getForeachExpressionHolder(), tagNode);
                 tagNode.setForeachExpressionHolder(compileExpression(attribute));
@@ -179,7 +179,7 @@ public class HTMLNodeVisitor extends NodeVisitor {
                 if (renderableAttribute.getPreviousText() == null) {
                     renderableAttribute.setPreviousText(textBeforeAttribute);
                 }
-            } else {
+            } else if (!ewtAttributeName.equals("inline")) {
                 throw new RuntimeException();
                 // TODO throw exception
             }
@@ -237,7 +237,7 @@ public class HTMLNodeVisitor extends NodeVisitor {
     private boolean renderNone(final Tag tag) {
         String renderAttributeName = ewtAttributePrefix + "render";
         String renderValue = tag.getAttribute(renderAttributeName);
-        return EWTUtil.attributeConstantEquals("none", renderValue);
+        return HTMLTemplatingUtil.attributeConstantEquals("none", renderValue);
     }
 
     private void throwIfAttributeAlreadyDefined(final PageAttribute attribute,

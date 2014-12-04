@@ -1,20 +1,20 @@
 /**
- * This file is part of Everit - Web Templating.
+ * This file is part of Everit - HTML Templating.
  *
- * Everit - Web Templating is free software: you can redistribute it and/or modify
+ * Everit - HTML Templating is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * Everit - Web Templating is distributed in the hope that it will be useful,
+ * Everit - HTML Templating is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * along with Everit - Web Templating.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Everit - HTML Templating.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.everit.templating.web.internal;
+package org.everit.templating.html;
 
 import java.io.Reader;
 import java.util.HashMap;
@@ -24,6 +24,9 @@ import org.everit.expression.ExpressionCompiler;
 import org.everit.expression.ParserConfiguration;
 import org.everit.templating.CompiledTemplate;
 import org.everit.templating.TemplateCompiler;
+import org.everit.templating.html.internal.CompiledTemplateImpl;
+import org.everit.templating.html.internal.HTMLNodeVisitor;
+import org.everit.templating.html.internal.ReaderSource;
 import org.htmlparser.Node;
 import org.htmlparser.lexer.Lexer;
 import org.htmlparser.lexer.Page;
@@ -33,7 +36,7 @@ import org.htmlparser.util.ParserException;
  * This is the entry class that can compile templates.
  *
  */
-public class TemplateCompilerImpl implements TemplateCompiler {
+public class HTMLTemplateCompiler implements TemplateCompiler {
 
     /**
      * The prefix of the Web Templating attributes. By default it is "data-ewt-".
@@ -53,7 +56,7 @@ public class TemplateCompilerImpl implements TemplateCompiler {
      * @param expressionCompiler
      *            The compiler of expressions.
      */
-    public TemplateCompilerImpl(final ExpressionCompiler expressionCompiler) {
+    public HTMLTemplateCompiler(final ExpressionCompiler expressionCompiler) {
         this("data-ewt-", expressionCompiler, new HashMap<String, TemplateCompiler>());
     }
 
@@ -66,7 +69,7 @@ public class TemplateCompilerImpl implements TemplateCompiler {
      * @param expressionCompiler
      *            The compiler of the expressions.
      */
-    public TemplateCompilerImpl(final String ewtAttributeprefix, final ExpressionCompiler expressionCompiler,
+    public HTMLTemplateCompiler(final String ewtAttributeprefix, final ExpressionCompiler expressionCompiler,
             final Map<String, TemplateCompiler> inlineCompilers) {
         this.ewtAttributeprefix = ewtAttributeprefix;
         this.expressionCompiler = expressionCompiler;

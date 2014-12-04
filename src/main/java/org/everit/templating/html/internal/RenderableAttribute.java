@@ -1,20 +1,20 @@
 /**
- * This file is part of Everit - Web Templating.
+ * This file is part of Everit - HTML Templating.
  *
- * Everit - Web Templating is free software: you can redistribute it and/or modify
+ * Everit - HTML Templating is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * Everit - Web Templating is distributed in the hope that it will be useful,
+ * Everit - HTML Templating is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * along with Everit - Web Templating.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Everit - HTML Templating.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.everit.templating.web.internal;
+package org.everit.templating.html.internal;
 
 import org.htmlparser.lexer.PageAttribute;
 
@@ -74,39 +74,39 @@ public class RenderableAttribute {
         return previousText;
     }
 
-    public void setAppendExpressionHolder(CompiledExpressionHolder appendExpressionHolder) {
+    public void setAppendExpressionHolder(final CompiledExpressionHolder appendExpressionHolder) {
         this.appendExpressionHolder = appendExpressionHolder;
     }
 
-    public void setAppendPageAttribute(PageAttribute appendPageAttribute) {
+    public void setAppendPageAttribute(final PageAttribute appendPageAttribute) {
         this.appendPageAttribute = appendPageAttribute;
     }
 
-    public void setConstantValue(String constantValue) {
+    public void setConstantValue(final String constantValue) {
         this.constantValue = constantValue;
     }
 
-    public void setExpressionHolder(CompiledExpressionHolder expressionHolder) {
+    public void setExpressionHolder(final CompiledExpressionHolder expressionHolder) {
         this.expressionHolder = expressionHolder;
     }
 
-    public void setExpressionPageAttribute(PageAttribute expressionPageAttribute) {
+    public void setExpressionPageAttribute(final PageAttribute expressionPageAttribute) {
         this.expressionPageAttribute = expressionPageAttribute;
     }
 
-    public void setPageAttribute(PageAttribute pageAttribute) {
+    public void setPageAttribute(final PageAttribute pageAttribute) {
         this.pageAttribute = pageAttribute;
     }
 
-    public void setPrependExpressionHolder(CompiledExpressionHolder prependExpressionHolder) {
+    public void setPrependExpressionHolder(final CompiledExpressionHolder prependExpressionHolder) {
         this.prependExpressionHolder = prependExpressionHolder;
     }
 
-    public void setPrependPageAttribute(PageAttribute prependPageAttribute) {
+    public void setPrependPageAttribute(final PageAttribute prependPageAttribute) {
         this.prependPageAttribute = prependPageAttribute;
     }
 
-    public void setPreviousText(String previousWhitespaces) {
+    public void setPreviousText(final String previousWhitespaces) {
         this.previousText = previousWhitespaces;
     }
 

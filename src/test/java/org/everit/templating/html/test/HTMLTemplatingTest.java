@@ -1,45 +1,48 @@
 /**
- * This file is part of Everit - Web Templating.
+ * This file is part of Everit - HTML Templating.
  *
- * Everit - Web Templating is free software: you can redistribute it and/or modify
+ * Everit - HTML Templating is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * Everit - Web Templating is distributed in the hope that it will be useful,
+ * Everit - HTML Templating is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * along with Everit - Web Templating.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Everit - HTML Templating.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.everit.osgi.ewt;
+package org.everit.templating.html.test;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import org.everit.expression.mvel.MvelExpressionCompiler;
 import org.everit.templating.CompiledTemplate;
 import org.everit.templating.TemplateCompiler;
-import org.everit.templating.TemplateWriter;
+import org.everit.templating.html.HTMLTemplateCompiler;
 import org.junit.Test;
 
-public class EWTTest {
+public class HTMLTemplatingTest {
 
     @Test
     public void testBookmark() {
-        TemplateCompiler engine = new TemplateCompiler(new MvelExpressionCompiler());
+        TemplateCompiler engine = new HTMLTemplateCompiler(new MvelExpressionCompiler());
 
         InputStream stream = this.getClass().getClassLoader().getResourceAsStream("META-INF/test1.html");
 
         try {
-            CompiledTemplate compiledTemplate = engine.compileTemplate(stream, "UTF8");
+            InputStreamReader reader = new InputStreamReader(stream, "UTF8");
+            CompiledTemplate compiledTemplate = engine.compile(reader);
             OutputStreamWriter writer = new OutputStreamWriter(System.out);
-            TestTemplateWriter templateWriter = new TestTemplateWriter(writer);
             HashMap<String, Object> vars = new HashMap<String, Object>();
 
             List<User> users = new ArrayList<User>();
@@ -48,25 +51,34 @@ public class EWTTest {
 
             vars.put("users", users);
 
-            compiledTemplate.render(templateWriter, vars, "bookmark1");
+            compiledTemplate.render(writer, vars, "bookmark1");
 
             writer.flush();
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
+        } finally {
+            try {
+                stream.close();
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
         }
     }
 
     @Test
     public void testFull() {
-        TemplateCompiler engine = new TemplateCompiler(new MvelExpressionCompiler());
+        TemplateCompiler engine = new HTMLTemplateCompiler(new MvelExpressionCompiler());
 
         InputStream stream = this.getClass().getClassLoader().getResourceAsStream("META-INF/test1.html");
 
         try {
-            CompiledTemplate compiledTemplate = engine.compileTemplate(stream, "UTF8");
-            OutputStreamWriter writer = new OutputStreamWriter(System.out);
-            TemplateWriter templateWriter = new TestTemplateWriter(null);
+            InputStreamReader reader = new InputStreamReader(stream, "UTF8");
+            CompiledTemplate compiledTemplate = engine.compile(reader);
+            // Writer writer = new OutputStreamWriter(System.out);
+            Writer writer = new NullWriter();
+
             HashMap<String, Object> vars = new HashMap<String, Object>();
 
             List<User> users = new ArrayList<User>();
@@ -76,9 +88,9 @@ public class EWTTest {
             vars.put("users", users);
 
             long startTime = System.nanoTime();
-            int n = 200000;
+            int n = 300000;
             for (int i = 0; i < n; i++) {
-                compiledTemplate.render(templateWriter, vars);
+                compiledTemplate.render(writer, vars);
             }
             long endTime = System.nanoTime();
             System.out.println("Time: " + ((endTime - startTime) / 1000000) + "ms, "
@@ -88,6 +100,13 @@ public class EWTTest {
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
+        } finally {
+            try {
+                stream.close();
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
         }
 
     }

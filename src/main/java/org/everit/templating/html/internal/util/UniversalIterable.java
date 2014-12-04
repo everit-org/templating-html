@@ -1,20 +1,20 @@
 /**
- * This file is part of Everit - Web Templating.
+ * This file is part of Everit - HTML Templating.
  *
- * Everit - Web Templating is free software: you can redistribute it and/or modify
+ * Everit - HTML Templating is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * Everit - Web Templating is distributed in the hope that it will be useful,
+ * Everit - HTML Templating is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * along with Everit - Web Templating.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Everit - HTML Templating.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.everit.templating.web.internal.util;
+package org.everit.templating.html.internal.util;
 
 import java.util.Iterator;
 
@@ -25,7 +25,7 @@ public class UniversalIterable<T> implements Iterable<T> {
 
         private final int length;
 
-        public AbstractArrayIterator(int length) {
+        public AbstractArrayIterator(final int length) {
             this.length = length;
         }
 
@@ -54,13 +54,13 @@ public class UniversalIterable<T> implements Iterable<T> {
 
         private final boolean[] array;
 
-        public BooleanArrayIterator(boolean[] array) {
+        public BooleanArrayIterator(final boolean[] array) {
             super(array.length);
             this.array = array;
         }
 
         @Override
-        public Boolean element(int index) {
+        public Boolean element(final int index) {
             return array[index];
         }
 
@@ -70,13 +70,13 @@ public class UniversalIterable<T> implements Iterable<T> {
 
         private final byte[] array;
 
-        public ByteArrayIterator(byte[] array) {
+        public ByteArrayIterator(final byte[] array) {
             super(array.length);
             this.array = array;
         }
 
         @Override
-        public Byte element(int index) {
+        public Byte element(final int index) {
             return array[index];
         }
 
@@ -86,13 +86,13 @@ public class UniversalIterable<T> implements Iterable<T> {
 
         private final char[] array;
 
-        public CharArrayIterator(char[] array) {
+        public CharArrayIterator(final char[] array) {
             super(array.length);
             this.array = array;
         }
 
         @Override
-        public Character element(int index) {
+        public Character element(final int index) {
             return array[index];
         }
 
@@ -107,13 +107,13 @@ public class UniversalIterable<T> implements Iterable<T> {
 
         private final double[] array;
 
-        public DoubleArrayIterator(double[] array) {
+        public DoubleArrayIterator(final double[] array) {
             super(array.length);
             this.array = array;
         }
 
         @Override
-        public Double element(int index) {
+        public Double element(final int index) {
             return array[index];
         }
     }
@@ -122,13 +122,13 @@ public class UniversalIterable<T> implements Iterable<T> {
 
         private final float[] array;
 
-        public FloatArrayIterator(float[] array) {
+        public FloatArrayIterator(final float[] array) {
             super(array.length);
             this.array = array;
         }
 
         @Override
-        public Float element(int index) {
+        public Float element(final int index) {
             return array[index];
         }
     }
@@ -137,13 +137,13 @@ public class UniversalIterable<T> implements Iterable<T> {
 
         private final int[] array;
 
-        public IntArrayIterator(int[] array) {
+        public IntArrayIterator(final int[] array) {
             super(array.length);
             this.array = array;
         }
 
         @Override
-        public Integer element(int index) {
+        public Integer element(final int index) {
             return array[index];
         }
     }
@@ -154,7 +154,7 @@ public class UniversalIterable<T> implements Iterable<T> {
 
         private final int n;
 
-        public IntegerIterator(Integer n) {
+        public IntegerIterator(final Integer n) {
             this.n = n;
         }
 
@@ -174,13 +174,13 @@ public class UniversalIterable<T> implements Iterable<T> {
 
         private final long[] array;
 
-        public LongArrayIterator(long[] array) {
+        public LongArrayIterator(final long[] array) {
             super(array.length);
             this.array = array;
         }
 
         @Override
-        public Long element(int index) {
+        public Long element(final int index) {
             return array[index];
         }
     }
@@ -189,13 +189,13 @@ public class UniversalIterable<T> implements Iterable<T> {
 
         private final Object[] array;
 
-        public ObjectArrayIterator(Object[] array) {
+        public ObjectArrayIterator(final Object[] array) {
             super(array.length);
             this.array = array;
         }
 
         @Override
-        public Object element(int index) {
+        public Object element(final int index) {
             return array[index];
         }
 
@@ -205,13 +205,13 @@ public class UniversalIterable<T> implements Iterable<T> {
 
         private final short[] array;
 
-        public ShortArrayIterator(short[] array) {
+        public ShortArrayIterator(final short[] array) {
             super(array.length);
             this.array = array;
         }
 
         @Override
-        public Short element(int index) {
+        public Short element(final int index) {
             return array[index];
         }
     }
@@ -220,7 +220,7 @@ public class UniversalIterable<T> implements Iterable<T> {
 
     private final CollectionTypes collectionType;
 
-    public UniversalIterable(Object collection) {
+    public UniversalIterable(final Object collection) {
         if (collection == null) {
             throw new NullPointerException("Collection must not be null");
         }

@@ -1,5 +1,23 @@
 <!--
 
+    This file is part of Everit - HTML Templating.
+
+    Everit - HTML Templating is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Lesser General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Everit - HTML Templating is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public License
+    along with Everit - HTML Templating.  If not, see <http://www.gnu.org/licenses/>.
+
+-->
+<!--
+
     This file is part of Everit - Web Templating.
 
     Everit - Web Templating is free software: you can redistribute it and/or modify
@@ -40,7 +58,6 @@
         data-ewt-attr="['id' : user]">
       <td><span data-ewt-text="user.firstName">John</span></td>
       <td><span data-ewt-utext="user.lastName">Doe</span></td>
-      <td data-ewt-utext="ewt_context.render('bookmark1')" />
       <td><div data-ewt-text="'someText'" /></td>
       <td id="shouldNotAppear" data-ewt-attr-id="null">
         
@@ -53,7 +70,7 @@
 <p>Welcome to Internet Explorer 8.</p>
 <![endif]-->
 
-  <script type="text/ewt-javascript" data-ewt-parsecontent="true" data-ewt-attr="['type' : 'text/javascript']">
+  <script type="text/ewt-javascript" data-ext-parsecontent="true" data-ewt-attr="['type' : 'text/javascript']">
     @{
 		  usersss.size()}(rowId) {
       
