@@ -16,13 +16,14 @@
  */
 package org.everit.templating.web.internal;
 
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
+import java.io.Reader;
+import java.util.HashMap;
+import java.util.Map;
 
-import org.everit.expression.CompileException;
 import org.everit.expression.ExpressionCompiler;
-import org.everit.expression.ParserContext;
+import org.everit.expression.ParserConfiguration;
 import org.everit.templating.CompiledTemplate;
+import org.everit.templating.TemplateCompiler;
 import org.htmlparser.Node;
 import org.htmlparser.lexer.Lexer;
 import org.htmlparser.lexer.Page;
@@ -32,7 +33,7 @@ import org.htmlparser.util.ParserException;
  * This is the entry class that can compile templates.
  *
  */
-public class TemplateCompilerImpl {
+public class TemplateCompilerImpl implements TemplateCompiler {
 
     /**
      * The prefix of the Web Templating attributes. By default it is "data-ewt-".
@@ -44,6 +45,8 @@ public class TemplateCompilerImpl {
      */
     private final ExpressionCompiler expressionCompiler;
 
+    private final Map<String, TemplateCompiler> inlineCompilers;
+
     /**
      * Creates a new TemplateCompiler with the "data-ewt-" default attribute prefix.
      *
@@ -51,7 +54,7 @@ public class TemplateCompilerImpl {
      *            The compiler of expressions.
      */
     public TemplateCompilerImpl(final ExpressionCompiler expressionCompiler) {
-        this("data-ewt-", expressionCompiler);
+        this("data-ewt-", expressionCompiler, new HashMap<String, TemplateCompiler>());
     }
 
     /**
@@ -63,52 +66,32 @@ public class TemplateCompilerImpl {
      * @param expressionCompiler
      *            The compiler of the expressions.
      */
-    public TemplateCompilerImpl(final String ewtAttributeprefix, final ExpressionCompiler expressionCompiler) {
+    public TemplateCompilerImpl(final String ewtAttributeprefix, final ExpressionCompiler expressionCompiler,
+            final Map<String, TemplateCompiler> inlineCompilers) {
         this.ewtAttributeprefix = ewtAttributeprefix;
         this.expressionCompiler = expressionCompiler;
+        this.inlineCompilers = new HashMap<String, TemplateCompiler>(inlineCompilers);
     }
 
-    /**
-     * Compiles a template.
-     *
-     * @param stream
-     *            The stream where the template is read from.
-     * @param charset
-     *            The character encoding of the template.
-     * @return The compiled template.
-     */
-    public CompiledTemplate compileTemplate(final InputStream stream, final String charset) {
-        try {
-            Page page = new Page(stream, charset);
-            return compileTemplateInternal(page);
-        } catch (UnsupportedEncodingException e) {
-            throw new CompileException(e);
-        } catch (ParserException e) {
-            throw new CompileException(e);
-        }
-
+    @Override
+    public CompiledTemplate compile(final Reader template) {
+        return compile(template, null);
     }
 
-    public CompiledTemplate compileTemplate(final String template) {
-        this(template, null);
-    }
-
-    public CompiledTemplate compileTemplate(final String template, final ParserContext parserContext) {
-        Page page = new Page(template);
-        try {
-            return compileTemplateInternal(page, new ParserContext(parserContext));
-        } catch (ParserException e) {
-            throw new CompileException(e);
-        }
-    }
-
-    private CompiledTemplate compileTemplateInternal(final Page page, final ParserContext parserContext)
-            throws ParserException {
+    @Override
+    public CompiledTemplate compile(final Reader template, final ParserConfiguration parserContext) {
+        ReaderSource source = new ReaderSource(template);
+        Page page = new Page(source);
         Lexer lexer = new Lexer(page);
-        HTMLNodeVisitor visitor = new HTMLNodeVisitor(ewtAttributeprefix, expressionCompiler);
+        HTMLNodeVisitor visitor = new HTMLNodeVisitor(ewtAttributeprefix, expressionCompiler, inlineCompilers);
         visitor.beginParsing();
-        for (Node node = lexer.nextNode(); node != null; node = lexer.nextNode()) {
-            node.accept(visitor);
+        try {
+            for (Node node = lexer.nextNode(); node != null; node = lexer.nextNode()) {
+                node.accept(visitor);
+            }
+        } catch (ParserException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
         visitor.finishedParsing();
         return new CompiledTemplateImpl(visitor.getRootNode());

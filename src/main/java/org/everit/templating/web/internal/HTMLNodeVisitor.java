@@ -16,6 +16,7 @@
  */
 package org.everit.templating.web.internal;
 
+import java.io.StringReader;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -23,8 +24,8 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Vector;
 
-import org.everit.expression.CompileException;
 import org.everit.expression.ExpressionCompiler;
+import org.everit.templating.CompiledTemplate;
 import org.everit.templating.TemplateCompiler;
 import org.everit.templating.web.internal.util.EWTUtil;
 import org.htmlparser.Node;
@@ -73,7 +74,9 @@ public class HTMLNodeVisitor extends NodeVisitor {
 
     private final ExpressionCompiler expressionCompiler;
 
-    private final TemplateCompiler inlineCompiler;
+    private String inline = null;
+
+    private final Map<String, TemplateCompiler> inlineCompilers;
 
     private ParentNode parentNode;
 
@@ -86,9 +89,9 @@ public class HTMLNodeVisitor extends NodeVisitor {
     private LinkedList<VisitorPathElement> visitorPath = new LinkedList<VisitorPathElement>();
 
     public HTMLNodeVisitor(final String ewtAttributePrefix, final ExpressionCompiler expressionCompiler,
-            final TemplateCompiler inlineCompiler) {
+            final Map<String, TemplateCompiler> inlineCompilers) {
         this.ewtAttributePrefix = ewtAttributePrefix;
-        this.inlineCompiler = inlineCompiler;
+        this.inlineCompilers = inlineCompilers;
         this.rootNode = new RootNode();
         this.parentNode = rootNode;
         this.expressionCompiler = expressionCompiler;
@@ -98,7 +101,7 @@ public class HTMLNodeVisitor extends NodeVisitor {
 
     private void appendCurrentSBAndClear() {
         if (currentSB.length() > 0) {
-            parentNode.getChildren().add(new TextNode(currentSB.toString(), false, inlineCompiler));
+            parentNode.getChildren().add(new TextNode(currentSB.toString()));
             currentSB = new StringBuilder();
         }
     }
@@ -109,7 +112,9 @@ public class HTMLNodeVisitor extends NodeVisitor {
             attributeValue = EWTUtil.unescape(attributeValue);
             return new CompiledExpressionHolder(expressionCompiler.compile(attributeValue), attribute);
         } catch (RuntimeException e) {
-            throw new CompileException("Cannot compile attribute: " + attribute.toString(), e);
+            e.printStackTrace();
+            // TODO throw nice exception
+            return null;
         }
     }
 
@@ -175,6 +180,7 @@ public class HTMLNodeVisitor extends NodeVisitor {
                     renderableAttribute.setPreviousText(textBeforeAttribute);
                 }
             } else {
+                throw new RuntimeException();
                 // TODO throw exception
             }
         } else {
@@ -182,8 +188,8 @@ public class HTMLNodeVisitor extends NodeVisitor {
             renderableAttribute.setPageAttribute(attribute);
             renderableAttribute.setPreviousText(textBeforeAttribute);
             if (renderableAttribute.getConstantValue() != null) {
-                throw new CompileException("Attribute '" + attribute.getName() + "' is duplicated in tag: "
-                        + tagNode.getTag().toHtml(true));
+                throw new RuntimeException();
+                // TODO throw exception that tag is duplicated.
             }
             renderableAttribute.setConstantValue(attribute.getValue());
         }
@@ -210,10 +216,10 @@ public class HTMLNodeVisitor extends NodeVisitor {
         return rootNode;
     }
 
-    private boolean inline(final Tag tag) {
-        String renderAttributeName = ewtAttributePrefix + "parsebody";
+    private String inline(final Tag tag) {
+        String renderAttributeName = ewtAttributePrefix + "inline";
         String renderValue = tag.getAttribute(renderAttributeName);
-        return EWTUtil.attributeConstantEquals("true", renderValue);
+        return renderValue;
     }
 
     private boolean isEwtNode(final Vector<PageAttribute> attributes) {
@@ -237,8 +243,7 @@ public class HTMLNodeVisitor extends NodeVisitor {
     private void throwIfAttributeAlreadyDefined(final PageAttribute attribute,
             final CompiledExpressionHolder expression, final TagNode tagNode) {
         if (expression != null) {
-            throw new CompileException("Attribute '" + attribute.getName()
-                    + "' is specified more than once in attribute: " + tagNode.getTag().toHtml(true));
+            // TODO throw exception
         }
     }
 
@@ -275,7 +280,14 @@ public class HTMLNodeVisitor extends NodeVisitor {
                 currentSB.append(tag.toHtml(true));
                 return;
             }
-            parentNode.getChildren().add(new TextNode(currentSB.toString(), true, inlineCompiler));
+            TemplateCompiler inlineCompiler = inlineCompilers.get(inline);
+            if (inlineCompiler == null) {
+                throw new RuntimeException();
+                // TODO throw nice exception
+            }
+            // TODO pass parsercontext
+            CompiledTemplate compiledInline = inlineCompiler.compile(new StringReader(currentSB.toString()));
+            parentNode.getChildren().add(new InlineNode(compiledInline));
             currentSB = new StringBuilder();
             visitMode = VisitMode.NORMAL;
         }
@@ -284,7 +296,7 @@ public class HTMLNodeVisitor extends NodeVisitor {
             currentSB.append(tag.toHtml(true));
         } else {
             if (currentSB.length() > 0) {
-                parentNode.getChildren().add(new TextNode(currentSB.toString(), false, inlineCompiler));
+                parentNode.getChildren().add(new TextNode(currentSB.toString()));
                 currentSB = new StringBuilder();
             }
 
@@ -328,7 +340,8 @@ public class HTMLNodeVisitor extends NodeVisitor {
                 node.accept(this);
             }
         } catch (ParserException e) {
-            throw new CompileException("Error during compiling remark: " + remark.toHtml(true));
+            e.printStackTrace();
+            // TODO throw exception
         }
         visitorPath = previousVisitorPath;
         List<HTMLNode> remarkNodes = parentNode.getChildren();
@@ -392,18 +405,19 @@ public class HTMLNodeVisitor extends NodeVisitor {
                 }
             }
 
-            boolean inline = inline(tag);
+            String tmpInline = inline(tag);
 
-            if (inline && tagNode.getTextExpressionHolder() != null) {
-                throw new CompileException("Body parse and dynamic text cannot be used together: " + tag.toHtml(true));
+            if (tmpInline != null && tagNode.getTextExpressionHolder() != null) {
+                // TODO throw exception that the two attributes cannot be used together.
             }
 
             parentNode.getChildren().add(tagNode);
             if (!tag.isEmptyXmlTag()) {
                 visitorPath.add(new VisitorPathElement().withEwtNode(tagNode).withTag(tag));
                 parentNode = tagNode;
-                if (inline) {
+                if (tmpInline != null) {
                     visitMode = VisitMode.INLINE;
+                    this.inline = tmpInline;
                     specialVisitDepth = visitorPath.size();
                 }
             }

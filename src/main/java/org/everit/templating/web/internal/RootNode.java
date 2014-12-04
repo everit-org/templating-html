@@ -19,20 +19,20 @@ package org.everit.templating.web.internal;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.everit.expression.CompileException;
-
 public class RootNode extends ParentNode {
 
     private final Map<String, TagNode> bookmarks = new HashMap<String, TagNode>();
 
     public void addBookmark(final String name, final TagNode tagNode) {
         if ("root".equals(name)) {
-            throw new CompileException("'root' cannot be used as a boomark name as it is reserved for the"
-                    + " root element");
+            // TODO throw nice exception.
+            // throw new CompileException("'root' cannot be used as a boomark name as it is reserved for the"
+            // + " root element");
         }
         TagNode previous = bookmarks.get(name);
         if (previous != null) {
-            throw new CompileException("Duplicate bookmark: " + name);
+            // TODO throw nice exception
+            // throw new CompileException("Duplicate bookmark: " + name);
         }
         bookmarks.put(name, tagNode);
     }

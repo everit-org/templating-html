@@ -16,7 +16,6 @@
  */
 package org.everit.templating.web.internal.util;
 
-import org.everit.expression.AbstractExpressionException;
 
 public class EWTUtil {
 
@@ -127,16 +126,18 @@ public class EWTUtil {
             }
         }
 
-        switch (type) {
-        case '[':
-            throw new AbstractExpressionException("unbalanced braces [ ... ]", chars, start);
-        case '{':
-            throw new AbstractExpressionException("unbalanced braces { ... }", chars, start);
-        case '(':
-            throw new AbstractExpressionException("unbalanced braces ( ... )", chars, start);
-        default:
-            throw new AbstractExpressionException("unterminated string literal", chars, start);
-        }
+        throw new RuntimeException();
+        // TODO throw nice exception.
+        // switch (type) {
+        // case '[':
+        // throw new AbstractExpressionException("unbalanced braces [ ... ]", chars, start);
+        // case '{':
+        // throw new AbstractExpressionException("unbalanced braces { ... }", chars, start);
+        // case '(':
+        // throw new AbstractExpressionException("unbalanced braces ( ... )", chars, start);
+        // default:
+        // throw new AbstractExpressionException("unterminated string literal", chars, start);
+        // }
     }
 
     public static int captureStringLiteral(final char type, final char[] expr, int cursor, final int end) {
@@ -147,7 +148,9 @@ public class EWTUtil {
         }
 
         if (cursor >= end || expr[cursor] != type) {
-            throw new AbstractExpressionException("unterminated string literal", expr, cursor);
+            // TODO throw nice exception
+            throw new RuntimeException();
+            // throw new AbstractExpressionException("unterminated string literal", expr, cursor);
         }
 
         return cursor;

@@ -16,33 +16,18 @@
  */
 package org.everit.templating.web.internal;
 
-import java.io.StringReader;
-
-import org.everit.templating.CompiledTemplate;
-import org.everit.templating.TemplateCompiler;
 
 public class TextNode implements HTMLNode {
 
-    private CompiledTemplate compiledInline;
-
     private final String text;
 
-    public TextNode(final String text, final boolean inline, final TemplateCompiler templateCompiler) {
+    public TextNode(final String text) {
         this.text = text;
-        if (!inline) {
-            this.compiledInline = null;
-        } else {
-            this.compiledInline = templateCompiler.compile(new StringReader(text));
-        }
     }
 
     @Override
     public void render(final TemplateContextImpl templateContext) {
-        if (compiledInline != null) {
-            compiledInline.render(templateContext.getWriter().getWrapped(), templateContext.getVars());
-        } else {
-            templateContext.getWriter().append(text);
-        }
+        templateContext.getWriter().append(text);
     }
 
 }

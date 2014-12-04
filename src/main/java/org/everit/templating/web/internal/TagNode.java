@@ -24,7 +24,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.everit.expression.CompiledExpression;
-import org.everit.templating.RenderException;
 import org.everit.templating.web.internal.util.EWTUtil;
 import org.htmlparser.Tag;
 import org.htmlparser.lexer.PageAttribute;
@@ -130,17 +129,21 @@ public class TagNode extends ParentNode {
             }
 
             if (!clazz.isAssignableFrom(result.getClass())) {
-                throw new RenderException("The result type " + result.getClass()
-                        + " cannot be assigned to the expected type " + clazz.getName()
-                        + " after evaluating attribute: " + expressionHolder.getPageAttribute().toString());
+                throw new RuntimeException();
+                // TODO throw nice exception
+                // throw new RenderException("The result type " + result.getClass()
+                // + " cannot be assigned to the expected type " + clazz.getName()
+                // + " after evaluating attribute: " + expressionHolder.getPageAttribute().toString());
             }
 
             @SuppressWarnings("unchecked")
             R typedResult = (R) result;
             return typedResult;
         } catch (RuntimeException e) {
-            throw new RenderException("Error during evaluating attribute: "
-                    + expressionHolder.getPageAttribute().toString(), e);
+            throw new RuntimeException();
+            // TODO throw nice exception
+            // throw new RenderException("Error during evaluating attribute: "
+            // + expressionHolder.getPageAttribute().toString(), e);
         }
     }
 
@@ -154,8 +157,8 @@ public class TagNode extends ParentNode {
         return result;
     }
 
-    private RenderScope evaluateRender(final Map<String, Object> vars) {
-        Object renderValue = evaluateExpression(renderExpressionHolder, vars, Object.class);
+    private RenderScope evaluateRender(final TemplateContextImpl templateContext) {
+        Object renderValue = evaluateExpression(renderExpressionHolder, templateContext, Object.class);
         if (renderValue == null) {
             return RenderScope.ALL;
         }
@@ -165,8 +168,9 @@ public class TagNode extends ParentNode {
         }
 
         if (!(renderValue instanceof String)) {
-            throw new RenderException("Unrecognized evaluated type '" + renderValue.getClass().getName()
-                    + "' of attribute: " + renderExpressionHolder.getPageAttribute().toString());
+            // TODO throw nice exception
+            // throw new RenderException("Unrecognized evaluated type '" + renderValue.getClass().getName()
+            // + "' of attribute: " + renderExpressionHolder.getPageAttribute().toString());
         }
         String renderString = (String) renderValue;
         if (renderString.equalsIgnoreCase(RenderScope.ALL.toString())) {
@@ -181,8 +185,10 @@ public class TagNode extends ParentNode {
         if (renderString.equalsIgnoreCase(RenderScope.TAG.toString())) {
             return RenderScope.TAG;
         }
-        throw new RenderException("Unrecognized evaluated value '" + renderString
-                + "' of attribute: " + renderExpressionHolder.getPageAttribute().toString());
+        throw new RuntimeException();
+        // TODO throw nice exception.
+        // throw new RenderException("Unrecognized evaluated value '" + renderString
+        // + "' of attribute: " + renderExpressionHolder.getPageAttribute().toString());
     }
 
     private Map<String, Object> evaluateTagVariables(final TemplateContextImpl templateContext) {
@@ -226,8 +232,10 @@ public class TagNode extends ParentNode {
                 }
                 return textString;
             } catch (RuntimeException e) {
-                throw new RenderException("Error during evaluating attribute: "
-                        + textExpressionHolder.getPageAttribute().toString(), e);
+                throw new RuntimeException();
+                // TODO throw nice exception
+                // throw new RenderException("Error during evaluating attribute: "
+                // + textExpressionHolder.getPageAttribute().toString(), e);
             }
         }
     }
@@ -507,7 +515,7 @@ public class TagNode extends ParentNode {
             scopedVars.putAll(tagVars);
         }
 
-        RenderScope render = evaluateRender(scopedVars);
+        RenderScope render = evaluateRender(templateContext);
         if (render == RenderScope.NONE) {
             templateContext.setVars(originalVars);
             return;
