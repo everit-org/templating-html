@@ -356,7 +356,8 @@ public class TagNode extends ParentNode {
                 quote = pageAttribute.getQuote();
             }
             String quoteString = String.valueOf(quote);
-            writer.append(assigment).append(quoteString).append(HTMLTemplatingUtil.escape(attributeValue)).append(quoteString);
+            writer.append(assigment).append(quoteString).append(HTMLTemplatingUtil.escape(attributeValue))
+                    .append(quoteString);
         }
     }
 

@@ -77,16 +77,12 @@ public class HTMLTemplateCompiler implements TemplateCompiler {
     }
 
     @Override
-    public CompiledTemplate compile(final Reader template) {
-        return compile(template, null);
-    }
-
-    @Override
-    public CompiledTemplate compile(final Reader template, final ParserConfiguration parserContext) {
+    public CompiledTemplate compile(final Reader template, final ParserConfiguration parserConfiguration) {
         ReaderSource source = new ReaderSource(template);
         Page page = new Page(source);
         Lexer lexer = new Lexer(page);
-        HTMLNodeVisitor visitor = new HTMLNodeVisitor(ewtAttributeprefix, expressionCompiler, inlineCompilers);
+        HTMLNodeVisitor visitor = new HTMLNodeVisitor(ewtAttributeprefix, expressionCompiler, inlineCompilers,
+                parserConfiguration);
         visitor.beginParsing();
         try {
             for (Node node = lexer.nextNode(); node != null; node = lexer.nextNode()) {

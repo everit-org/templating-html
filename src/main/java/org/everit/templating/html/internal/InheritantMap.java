@@ -1,19 +1,3 @@
-/**
- * This file is part of Everit - HTML Templating.
- *
- * Everit - HTML Templating is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * Everit - HTML Templating is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with Everit - HTML Templating.  If not, see <http://www.gnu.org/licenses/>.
- */
 package org.everit.templating.html.internal;
 
 import java.util.Collection;
@@ -136,15 +120,19 @@ public class InheritantMap<K, V> implements Map<K, V> {
         if (TemplateConstants.VAR_TEMPLATE_CONTEXT.equals(key)) {
             throw new ReservedWordException("'" + TemplateConstants.VAR_TEMPLATE_CONTEXT + "' is a reserved word");
         }
-        return internalMap.put(key, value);
+
+        if (parentMap != null && parentMap.containsKey(key)) {
+            return parentMap.put(key, value);
+        } else {
+            return internalMap.put(key, value);
+        }
     }
 
     @Override
     public void putAll(final Map<? extends K, ? extends V> m) {
-        if (m.containsKey(TemplateConstants.VAR_TEMPLATE_CONTEXT)) {
-            throw new ReservedWordException("'" + TemplateConstants.VAR_TEMPLATE_CONTEXT + "' is a reserved word");
+        for (Entry<? extends K, ? extends V> entry : m.entrySet()) {
+            put(entry.getKey(), entry.getValue());
         }
-        internalMap.putAll(m);
     }
 
     /**

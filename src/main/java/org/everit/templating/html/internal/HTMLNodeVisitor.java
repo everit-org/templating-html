@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Vector;
 
 import org.everit.expression.ExpressionCompiler;
+import org.everit.expression.ParserConfiguration;
 import org.everit.templating.CompiledTemplate;
 import org.everit.templating.TemplateCompiler;
 import org.everit.templating.html.internal.util.HTMLTemplatingUtil;
@@ -80,6 +81,8 @@ public class HTMLNodeVisitor extends NodeVisitor {
 
     private ParentNode parentNode;
 
+    private final ParserConfiguration parserConfiguration;
+
     private final RootNode rootNode;
 
     private int specialVisitDepth = 0;
@@ -89,9 +92,10 @@ public class HTMLNodeVisitor extends NodeVisitor {
     private LinkedList<VisitorPathElement> visitorPath = new LinkedList<VisitorPathElement>();
 
     public HTMLNodeVisitor(final String ewtAttributePrefix, final ExpressionCompiler expressionCompiler,
-            final Map<String, TemplateCompiler> inlineCompilers) {
+            final Map<String, TemplateCompiler> inlineCompilers, final ParserConfiguration parserConfiguration) {
         this.ewtAttributePrefix = ewtAttributePrefix;
         this.inlineCompilers = inlineCompilers;
+        this.parserConfiguration = parserConfiguration;
         this.rootNode = new RootNode();
         this.parentNode = rootNode;
         this.expressionCompiler = expressionCompiler;
@@ -110,7 +114,9 @@ public class HTMLNodeVisitor extends NodeVisitor {
         try {
             String attributeValue = attribute.getValue();
             attributeValue = HTMLTemplatingUtil.unescape(attributeValue);
-            return new CompiledExpressionHolder(expressionCompiler.compile(attributeValue), attribute);
+            // TODO pass a parserConfiguration where position is actualized
+            return new CompiledExpressionHolder(expressionCompiler.compile(attributeValue, parserConfiguration),
+                    attribute);
         } catch (RuntimeException e) {
             e.printStackTrace();
             // TODO throw nice exception
@@ -285,8 +291,9 @@ public class HTMLNodeVisitor extends NodeVisitor {
                 throw new RuntimeException();
                 // TODO throw nice exception
             }
-            // TODO pass parsercontext
-            CompiledTemplate compiledInline = inlineCompiler.compile(new StringReader(currentSB.toString()));
+            // TODO pass a parserConfiguration where position is actualized
+            CompiledTemplate compiledInline = inlineCompiler.compile(new StringReader(currentSB.toString()),
+                    parserConfiguration);
             parentNode.getChildren().add(new InlineNode(compiledInline));
             currentSB = new StringBuilder();
             visitMode = VisitMode.NORMAL;

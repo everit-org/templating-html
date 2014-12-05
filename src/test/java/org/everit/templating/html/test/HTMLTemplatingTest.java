@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import org.everit.expression.ParserConfiguration;
 import org.everit.expression.mvel.MvelExpressionCompiler;
 import org.everit.templating.CompiledTemplate;
 import org.everit.templating.TemplateCompiler;
@@ -41,7 +42,8 @@ public class HTMLTemplatingTest {
 
         try {
             InputStreamReader reader = new InputStreamReader(stream, "UTF8");
-            CompiledTemplate compiledTemplate = engine.compile(reader);
+            CompiledTemplate compiledTemplate = engine.compile(reader, new ParserConfiguration(this.getClass()
+                    .getClassLoader()));
             OutputStreamWriter writer = new OutputStreamWriter(System.out);
             HashMap<String, Object> vars = new HashMap<String, Object>();
 
@@ -75,7 +77,8 @@ public class HTMLTemplatingTest {
 
         try {
             InputStreamReader reader = new InputStreamReader(stream, "UTF8");
-            CompiledTemplate compiledTemplate = engine.compile(reader);
+            CompiledTemplate compiledTemplate = engine.compile(reader, new ParserConfiguration(this.getClass()
+                    .getClassLoader()));
             // Writer writer = new OutputStreamWriter(System.out);
             Writer writer = new NullWriter();
 
