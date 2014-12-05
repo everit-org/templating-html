@@ -16,7 +16,6 @@
  */
 package org.everit.templating.html;
 
-import java.io.Reader;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -26,10 +25,11 @@ import org.everit.templating.CompiledTemplate;
 import org.everit.templating.TemplateCompiler;
 import org.everit.templating.html.internal.CompiledTemplateImpl;
 import org.everit.templating.html.internal.HTMLNodeVisitor;
-import org.everit.templating.html.internal.ReaderSource;
 import org.htmlparser.Node;
 import org.htmlparser.lexer.Lexer;
 import org.htmlparser.lexer.Page;
+import org.htmlparser.lexer.Source;
+import org.htmlparser.lexer.StringSource;
 import org.htmlparser.util.ParserException;
 
 /**
@@ -77,8 +77,8 @@ public class HTMLTemplateCompiler implements TemplateCompiler {
     }
 
     @Override
-    public CompiledTemplate compile(final Reader template, final ParserConfiguration parserConfiguration) {
-        ReaderSource source = new ReaderSource(template);
+    public CompiledTemplate compile(final String template, final ParserConfiguration parserConfiguration) {
+        Source source = new StringSource(template);
         Page page = new Page(source);
         Lexer lexer = new Lexer(page);
         HTMLNodeVisitor visitor = new HTMLNodeVisitor(ewtAttributeprefix, expressionCompiler, inlineCompilers,

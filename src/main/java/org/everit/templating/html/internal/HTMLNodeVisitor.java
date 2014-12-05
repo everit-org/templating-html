@@ -16,7 +16,6 @@
  */
 package org.everit.templating.html.internal;
 
-import java.io.StringReader;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -292,7 +291,7 @@ public class HTMLNodeVisitor extends NodeVisitor {
                 // TODO throw nice exception
             }
             // TODO pass a parserConfiguration where position is actualized
-            CompiledTemplate compiledInline = inlineCompiler.compile(new StringReader(currentSB.toString()),
+            CompiledTemplate compiledInline = inlineCompiler.compile(currentSB.toString(),
                     parserConfiguration);
             parentNode.getChildren().add(new InlineNode(compiledInline));
             currentSB = new StringBuilder();

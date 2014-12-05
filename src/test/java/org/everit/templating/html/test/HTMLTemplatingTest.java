@@ -34,38 +34,51 @@ import org.junit.Test;
 
 public class HTMLTemplatingTest {
 
-    @Test
-    public void testBookmark() {
-        TemplateCompiler engine = new HTMLTemplateCompiler(new MvelExpressionCompiler());
-
-        InputStream stream = this.getClass().getClassLoader().getResourceAsStream("META-INF/test1.html");
-
+    private static String readTemplate(final String templateName) {
+        InputStream stream = HTMLTemplatingTest.class.getClassLoader().getResourceAsStream("META-INF/test1.html");
         try {
             InputStreamReader reader = new InputStreamReader(stream, "UTF8");
-            CompiledTemplate compiledTemplate = engine.compile(reader, new ParserConfiguration(this.getClass()
-                    .getClassLoader()));
-            OutputStreamWriter writer = new OutputStreamWriter(System.out);
-            HashMap<String, Object> vars = new HashMap<String, Object>();
-
-            List<User> users = new ArrayList<User>();
-            users.add(new User(0, "Niels", "Holgerson"));
-            users.add(new User(1, "B", "Zs"));
-
-            vars.put("users", users);
-
-            compiledTemplate.render(writer, vars, "bookmark1");
-
-            writer.flush();
+            StringBuilder sb = new StringBuilder();
+            char[] cbuf = new char[1024];
+            int r = reader.read(cbuf);
+            while (r >= 0) {
+                sb.append(cbuf, 0, r);
+                r = reader.read(cbuf);
+            }
+            return sb.toString();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            throw new RuntimeException(e);
         } finally {
             try {
                 stream.close();
             } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                throw new RuntimeException(e);
             }
+        }
+    }
+
+    @Test
+    public void testBookmark() {
+        TemplateCompiler engine = new HTMLTemplateCompiler(new MvelExpressionCompiler());
+
+        CompiledTemplate compiledTemplate = engine.compile(readTemplate("META-INF/test1.html"),
+                new ParserConfiguration(this.getClass().getClassLoader()));
+        OutputStreamWriter writer = new OutputStreamWriter(System.out);
+        HashMap<String, Object> vars = new HashMap<String, Object>();
+
+        List<User> users = new ArrayList<User>();
+        users.add(new User(0, "Niels", "Holgerson"));
+        users.add(new User(1, "B", "Zs"));
+
+        vars.put("users", users);
+
+        compiledTemplate.render(writer, vars, "bookmark1");
+
+        try {
+            writer.flush();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
     }
 
@@ -73,43 +86,33 @@ public class HTMLTemplatingTest {
     public void testFull() {
         TemplateCompiler engine = new HTMLTemplateCompiler(new MvelExpressionCompiler());
 
-        InputStream stream = this.getClass().getClassLoader().getResourceAsStream("META-INF/test1.html");
+        CompiledTemplate compiledTemplate = engine.compile(readTemplate("META-INF/test1.html"),
+                new ParserConfiguration(this.getClass().getClassLoader()));
+        // Writer writer = new OutputStreamWriter(System.out);
+        Writer writer = new NullWriter();
+
+        HashMap<String, Object> vars = new HashMap<String, Object>();
+
+        List<User> users = new ArrayList<User>();
+        users.add(new User(0, "Niels", "Holgerson"));
+        users.add(new User(1, "B", "Zs"));
+
+        vars.put("users", users);
+
+        long startTime = System.nanoTime();
+        int n = 300000;
+        for (int i = 0; i < n; i++) {
+            compiledTemplate.render(writer, vars);
+        }
+        long endTime = System.nanoTime();
+        System.out.println("Time: " + ((endTime - startTime) / 1000000) + "ms, "
+                + ((double) n * 1000000 / (endTime - startTime)) + " db/ms");
 
         try {
-            InputStreamReader reader = new InputStreamReader(stream, "UTF8");
-            CompiledTemplate compiledTemplate = engine.compile(reader, new ParserConfiguration(this.getClass()
-                    .getClassLoader()));
-            // Writer writer = new OutputStreamWriter(System.out);
-            Writer writer = new NullWriter();
-
-            HashMap<String, Object> vars = new HashMap<String, Object>();
-
-            List<User> users = new ArrayList<User>();
-            users.add(new User(0, "Niels", "Holgerson"));
-            users.add(new User(1, "B", "Zs"));
-
-            vars.put("users", users);
-
-            long startTime = System.nanoTime();
-            int n = 300000;
-            for (int i = 0; i < n; i++) {
-                compiledTemplate.render(writer, vars);
-            }
-            long endTime = System.nanoTime();
-            System.out.println("Time: " + ((endTime - startTime) / 1000000) + "ms, "
-                    + ((double) n * 1000000 / (endTime - startTime)) + " db/ms");
-
             writer.flush();
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        } finally {
-            try {
-                stream.close();
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
         }
 
     }
