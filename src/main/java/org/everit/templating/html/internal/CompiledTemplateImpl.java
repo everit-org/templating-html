@@ -21,6 +21,7 @@ import java.util.Map;
 
 import org.everit.templating.CompiledTemplate;
 import org.everit.templating.TemplateConstants;
+import org.everit.templating.util.InheritantMap;
 
 public class CompiledTemplateImpl implements CompiledTemplate {
 
@@ -36,24 +37,23 @@ public class CompiledTemplateImpl implements CompiledTemplate {
     }
 
     @Override
-    public void render(final Writer writer, final Map<String, Object> vars, final String bookmark) {
+    public void render(final Writer writer, final Map<String, Object> vars, final String fragmentId) {
         ParentNode parentNode;
-        String evaluatedBookmark = bookmark;
+        String evaluatedBookmark = fragmentId;
 
-        if (bookmark == null) {
+        if (fragmentId == null) {
             parentNode = rootNode;
-            evaluatedBookmark = TemplateConstants.BOOKMARK_ROOT;
+            evaluatedBookmark = TemplateConstants.FRAGMENT_ROOT;
         } else {
-            parentNode = rootNode.getBookmark(bookmark);
+            parentNode = rootNode.getBookmark(fragmentId);
             if (parentNode == null) {
                 return;
             }
         }
 
-        InheritantMap<String, Object> scopedVars = new InheritantMap<String, Object>(vars);
+        InheritantMap<String, Object> scopedVars = new InheritantMap<String, Object>(vars, false);
         TemplateContextImpl templateContext = new TemplateContextImpl(this, evaluatedBookmark, scopedVars, writer);
-        scopedVars.putInternal(TemplateConstants.VAR_TEMPLATE_CONTEXT,
-                templateContext);
+        scopedVars.putWithoutChecks(TemplateConstants.VAR_TEMPLATE_CONTEXT, templateContext);
         parentNode.render(templateContext);
     }
 }

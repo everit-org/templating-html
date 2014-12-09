@@ -24,12 +24,14 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.everit.expression.ParserConfiguration;
 import org.everit.expression.mvel.MvelExpressionCompiler;
 import org.everit.templating.CompiledTemplate;
 import org.everit.templating.TemplateCompiler;
 import org.everit.templating.html.HTMLTemplateCompiler;
+import org.everit.templating.text.TextTemplateCompiler;
 import org.junit.Test;
 
 public class HTMLTemplatingTest {
@@ -84,12 +86,17 @@ public class HTMLTemplatingTest {
 
     @Test
     public void testFull() {
-        TemplateCompiler engine = new HTMLTemplateCompiler(new MvelExpressionCompiler());
+        MvelExpressionCompiler expressionCompiler = new MvelExpressionCompiler();
+
+        Map<String, TemplateCompiler> inlineCompilers = new HashMap<String, TemplateCompiler>();
+        inlineCompilers.put("text", new TextTemplateCompiler(expressionCompiler));
+
+        TemplateCompiler engine = new HTMLTemplateCompiler(expressionCompiler, inlineCompilers);
 
         CompiledTemplate compiledTemplate = engine.compile(readTemplate("META-INF/test1.html"),
                 new ParserConfiguration(this.getClass().getClassLoader()));
-        // Writer writer = new OutputStreamWriter(System.out);
-        Writer writer = new NullWriter();
+        Writer writer = new OutputStreamWriter(System.out);
+        // Writer writer = new NullWriter();
 
         HashMap<String, Object> vars = new HashMap<String, Object>();
 
@@ -100,7 +107,7 @@ public class HTMLTemplatingTest {
         vars.put("users", users);
 
         long startTime = System.nanoTime();
-        int n = 300000;
+        int n = 1;
         for (int i = 0; i < n; i++) {
             compiledTemplate.render(writer, vars);
         }

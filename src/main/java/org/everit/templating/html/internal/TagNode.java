@@ -25,6 +25,9 @@ import java.util.Set;
 
 import org.everit.expression.CompiledExpression;
 import org.everit.templating.html.internal.util.HTMLTemplatingUtil;
+import org.everit.templating.html.internal.util.UniversalIterable;
+import org.everit.templating.util.Supplier;
+import org.everit.templating.util.TemplateWriter;
 import org.htmlparser.Tag;
 import org.htmlparser.lexer.PageAttribute;
 
@@ -140,7 +143,7 @@ public class TagNode extends ParentNode {
             R typedResult = (R) result;
             return typedResult;
         } catch (RuntimeException e) {
-            throw new RuntimeException();
+            throw new RuntimeException(e);
             // TODO throw nice exception
             // throw new RenderException("Error during evaluating attribute: "
             // + expressionHolder.getPageAttribute().toString(), e);
@@ -286,17 +289,21 @@ public class TagNode extends ParentNode {
 
     @Override
     public void render(final TemplateContextImpl templateContext) {
-        Map<Object, Object> foreachMap = evaluateForeachMap(templateContext);
+        final Map<Object, Object> foreachMap = evaluateForeachMap(templateContext);
 
         if (foreachExpressionHolder != null && (foreachMap == null || foreachMap.size() == 0)) {
             return;
         }
 
         if (foreachMap != null) {
-            Map<String, Object> originalVars = templateContext.getVars();
-            templateContext.setVars(new InheritantMap<String, Object>(originalVars));
-            renderEach(templateContext, foreachMap);
-            templateContext.setVars(originalVars);
+            templateContext.runInBlock(new Supplier<Object>() {
+
+                @Override
+                public Object call() {
+                    renderEach(templateContext, foreachMap);
+                    return null;
+                }
+            });
         } else {
             renderItem(templateContext);
         }
@@ -361,6 +368,29 @@ public class TagNode extends ParentNode {
         }
     }
 
+    private void renderContent(final TemplateContextImpl templateContext) {
+        RenderScope render = evaluateRender(templateContext);
+        if (render == RenderScope.NONE) {
+            return;
+        }
+
+        String text = null;
+        if (render == RenderScope.ALL || render == RenderScope.CONTENT) {
+            text = evaluateText(templateContext.getVars());
+        }
+
+        if (render == RenderScope.ALL || render == RenderScope.TAG) {
+            renderTag(templateContext, text, render == RenderScope.ALL);
+        } else {
+
+            if (text != null) {
+                templateContext.getWriter().append(text);
+            } else {
+                renderChildren(templateContext);
+            }
+        }
+    }
+
     private void renderEach(final TemplateContextImpl templateContext,
             final Map<Object, Object> foreachMap) {
 
@@ -373,6 +403,7 @@ public class TagNode extends ParentNode {
 
             Object key = entry.getKey();
             if (key == null) {
+                throw new RuntimeException();
                 // TODO throw nice exception.
             }
 
@@ -383,6 +414,7 @@ public class TagNode extends ParentNode {
             }
 
             if (!value.getClass().isArray() && !(value instanceof Iterable)) {
+                throw new RuntimeException();
                 // TODO throw nice exception
             }
 
@@ -394,6 +426,7 @@ public class TagNode extends ParentNode {
             } else if (key instanceof Object[]) {
                 Object[] foreachKeyObjArray = (Object[]) key;
                 if (foreachKeyObjArray.length == 0 || foreachKeyObjArray.length > 2) {
+                    throw new RuntimeException();
                     // TODO throw nice exception
                 }
                 valueVarName = String.valueOf(foreachKeyObjArray[0]);
@@ -401,6 +434,7 @@ public class TagNode extends ParentNode {
                     indexVarName = String.valueOf(foreachKeyObjArray[1]);
                 }
             } else {
+                throw new RuntimeException();
                 // TODO throw nice exception
             }
             ForeachItem item = new ForeachItem();
@@ -425,120 +459,36 @@ public class TagNode extends ParentNode {
             ForeachItem item = items[mapEntryIndex];
             Object collectionObject = item.collection;
             Map<String, Object> vars = templateContext.getVars();
-            if (collectionObject instanceof Iterable) {
-                Iterable<?> iterable = (Iterable<?>) collectionObject;
-                Iterator<?> iterator = iterable.iterator();
-                int i = 0;
-                while (iterator.hasNext()) {
-                    Object value = iterator.next();
-                    assignForEachVariables(vars, item, i, value);
-                    renderEachRecurse(templateContext, items, mapEntryIndex + 1);
-                    i++;
-                }
-            } else if (collectionObject instanceof byte[]) {
-                byte[] collectionObject2 = (byte[]) collectionObject;
-                for (int i = 0; i < collectionObject2.length; i++) {
-                    byte value = collectionObject2[i];
-                    assignForEachVariables(vars, item, i, value);
-                    renderEachRecurse(templateContext, items, mapEntryIndex + 1);
-                }
-            } else if (collectionObject instanceof boolean[]) {
-                boolean[] collectionObject2 = (boolean[]) collectionObject;
-                for (int i = 0; i < collectionObject2.length; i++) {
-                    boolean value = collectionObject2[i];
-                    assignForEachVariables(vars, item, i, value);
-                    renderEachRecurse(templateContext, items, mapEntryIndex + 1);
-                }
-            } else if (collectionObject instanceof char[]) {
-                char[] collectionObject2 = (char[]) collectionObject;
-                for (int i = 0; i < collectionObject2.length; i++) {
-                    char value = collectionObject2[i];
-                    assignForEachVariables(vars, item, i, value);
-                    renderEachRecurse(templateContext, items, mapEntryIndex + 1);
-                }
-            } else if (collectionObject instanceof double[]) {
-                double[] collectionObject2 = (double[]) collectionObject;
-                for (int i = 0; i < collectionObject2.length; i++) {
-                    double value = collectionObject2[i];
-                    assignForEachVariables(vars, item, i, value);
-                    renderEachRecurse(templateContext, items, mapEntryIndex + 1);
-                }
-            } else if (collectionObject instanceof float[]) {
-                float[] collectionObject2 = (float[]) collectionObject;
-                for (int i = 0; i < collectionObject2.length; i++) {
-                    float value = collectionObject2[i];
-                    assignForEachVariables(vars, item, i, value);
-                    renderEachRecurse(templateContext, items, mapEntryIndex + 1);
-                }
-            } else if (collectionObject instanceof int[]) {
-                int[] collectionObject2 = (int[]) collectionObject;
-                for (int i = 0; i < collectionObject2.length; i++) {
-                    int value = collectionObject2[i];
-                    assignForEachVariables(vars, item, i, value);
-                    renderEachRecurse(templateContext, items, mapEntryIndex + 1);
-                }
-            } else if (collectionObject instanceof long[]) {
-                long[] collectionObject2 = (long[]) collectionObject;
-                for (int i = 0; i < collectionObject2.length; i++) {
-                    long value = collectionObject2[i];
-                    assignForEachVariables(vars, item, i, value);
-                    renderEachRecurse(templateContext, items, mapEntryIndex + 1);
-                }
-            } else if (collectionObject instanceof short[]) {
-                short[] collectionObject2 = (short[]) collectionObject;
-                for (int i = 0; i < collectionObject2.length; i++) {
-                    short value = collectionObject2[i];
-                    assignForEachVariables(vars, item, i, value);
-                    renderEachRecurse(templateContext, items, mapEntryIndex + 1);
-                }
-            } else if (collectionObject instanceof Object[]) {
-                Object[] collectionObject2 = (Object[]) collectionObject;
-                for (int i = 0; i < collectionObject2.length; i++) {
-                    Object value = collectionObject2[i];
-                    assignForEachVariables(vars, item, i, value);
-                    renderEachRecurse(templateContext, items, mapEntryIndex + 1);
-                }
-            } else {
-                // TODO throw nice exception
+
+            UniversalIterable<Object> iterable = new UniversalIterable<Object>(collectionObject);
+
+            Iterator<?> iterator = iterable.iterator();
+            int i = 0;
+            while (iterator.hasNext()) {
+                Object value = iterator.next();
+                assignForEachVariables(vars, item, i, value);
+                renderEachRecurse(templateContext, items, mapEntryIndex + 1);
+                i++;
             }
         }
     }
 
     private void renderItem(final TemplateContextImpl templateContext) {
-        Map<String, Object> tagVars = evaluateTagVariables(templateContext);
+        final Map<String, Object> tagVars = evaluateTagVariables(templateContext);
 
-        Map<String, Object> originalVars = templateContext.getVars();
-
-        Map<String, Object> scopedVars = originalVars;
         if (tagVars != null && tagVars.size() > 0) {
-            scopedVars = new InheritantMap<String, Object>(templateContext.getVars());
-            templateContext.setVars(scopedVars);
-            scopedVars.putAll(tagVars);
-        }
+            templateContext.runInBlock(new Supplier<Object>() {
 
-        RenderScope render = evaluateRender(templateContext);
-        if (render == RenderScope.NONE) {
-            templateContext.setVars(originalVars);
-            return;
-        }
-
-        String text = null;
-        if (render == RenderScope.ALL || render == RenderScope.CONTENT) {
-            text = evaluateText(scopedVars);
-        }
-
-        if (render == RenderScope.ALL || render == RenderScope.TAG) {
-            renderTag(templateContext, text, render == RenderScope.ALL);
+                @Override
+                public Object call() {
+                    templateContext.getVars().putAll(tagVars);
+                    renderContent(templateContext);
+                    return null;
+                }
+            });
         } else {
-
-            if (text != null) {
-                templateContext.getWriter().append(text);
-            } else {
-                renderChildren(templateContext);
-            }
+            renderContent(templateContext);
         }
-
-        templateContext.setVars(originalVars);
 
     }
 

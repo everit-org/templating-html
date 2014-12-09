@@ -38,6 +38,8 @@ import org.htmlparser.util.ParserException;
  */
 public class HTMLTemplateCompiler implements TemplateCompiler {
 
+    public static final String DEFAULT_ATTRIBUTE_PREFIX = "data-eht-";
+
     /**
      * The prefix of the Web Templating attributes. By default it is "data-ewt-".
      */
@@ -57,7 +59,12 @@ public class HTMLTemplateCompiler implements TemplateCompiler {
      *            The compiler of expressions.
      */
     public HTMLTemplateCompiler(final ExpressionCompiler expressionCompiler) {
-        this("data-ewt-", expressionCompiler, new HashMap<String, TemplateCompiler>());
+        this(DEFAULT_ATTRIBUTE_PREFIX, expressionCompiler, new HashMap<String, TemplateCompiler>());
+    }
+
+    public HTMLTemplateCompiler(final ExpressionCompiler expressionCompiler,
+            final Map<String, TemplateCompiler> inlineCompilers) {
+        this(DEFAULT_ATTRIBUTE_PREFIX, expressionCompiler, inlineCompilers);
     }
 
     /**

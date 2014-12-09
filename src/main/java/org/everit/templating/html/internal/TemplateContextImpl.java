@@ -16,37 +16,25 @@
  */
 package org.everit.templating.html.internal;
 
+import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Map;
 
 import org.everit.templating.CompiledTemplate;
-import org.everit.templating.TemplateContext;
+import org.everit.templating.util.AbstractTemplateContext;
+import org.everit.templating.util.TemplateWriter;
 
-public class TemplateContextImpl implements TemplateContext {
-
-    private final String bookmark;
+public class TemplateContextImpl extends AbstractTemplateContext {
 
     private final CompiledTemplate compiledTemplate;
 
-    private Map<String, Object> vars;
-
     private final TemplateWriter writer;
 
-    public TemplateContextImpl(final CompiledTemplate compiledTemplate, final String bookmark,
+    public TemplateContextImpl(final CompiledTemplate compiledTemplate, final String fragmentId,
             final Map<String, Object> vars, final Writer writer) {
-        this.bookmark = bookmark;
+        super(fragmentId, vars);
         this.compiledTemplate = compiledTemplate;
-        this.vars = vars;
         this.writer = new TemplateWriter(writer);
-    }
-
-    @Override
-    public String getBookmark() {
-        return bookmark;
-    }
-
-    public Map<String, Object> getVars() {
-        return vars;
     }
 
     public TemplateWriter getWriter() {
@@ -54,12 +42,12 @@ public class TemplateContextImpl implements TemplateContext {
     }
 
     @Override
-    public void renderBookmark(final String bookmark) {
-        compiledTemplate.render(writer.getWrapped(), vars, bookmark);
-    }
+    public String renderFragmentInternal(final String fragmentId, final Map<String, Object> vars) {
+        StringWriter stringWriter = new StringWriter();
 
-    public void setVars(final Map<String, Object> vars) {
-        this.vars = vars;
+        compiledTemplate.render(stringWriter, vars, fragmentId);
+
+        return stringWriter.toString();
     }
 
 }

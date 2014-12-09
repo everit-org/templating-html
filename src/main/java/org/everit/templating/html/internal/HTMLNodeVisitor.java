@@ -128,7 +128,7 @@ public class HTMLNodeVisitor extends NodeVisitor {
         String attributeName = attribute.getName();
         if (attributeName.startsWith(ewtAttributePrefix)) {
             String ewtAttributeName = attributeName.substring(ewtAttributePrefix.length());
-            if (ewtAttributeName.equals("bookmark")) {
+            if (ewtAttributeName.equals("fragment")) {
                 rootNode.addBookmark(HTMLTemplatingUtil.unescape(attribute.getValue()), tagNode);
             } else if (ewtAttributeName.equals("foreach")) {
                 throwIfAttributeAlreadyDefined(attribute, tagNode.getForeachExpressionHolder(), tagNode);
@@ -185,7 +185,7 @@ public class HTMLNodeVisitor extends NodeVisitor {
                     renderableAttribute.setPreviousText(textBeforeAttribute);
                 }
             } else if (!ewtAttributeName.equals("inline")) {
-                throw new RuntimeException();
+                throw new RuntimeException(ewtAttributeName);
                 // TODO throw exception
             }
         } else {

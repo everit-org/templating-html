@@ -120,6 +120,18 @@
       <version>1.0.0-SNAPSHOT</version>
     </dependency>
     <dependency>
+      <groupId>org.everit.templating</groupId>
+      <artifactId>org.everit.templating.util</artifactId>
+      <version>1.0.0-SNAPSHOT</version>
+    </dependency>
+    
+    <dependency>
+      <groupId>org.everit.templating</groupId>
+      <artifactId>org.everit.templating.text</artifactId>
+      <version>1.0.0-SNAPSHOT</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.everit.expression</groupId>
       <artifactId>org.everit.expression.mvel</artifactId>
       <version>1.0.0-SNAPSHOT</version>

@@ -35,10 +35,10 @@
 
 -->
 <!--
-  bookmark: Bookmarking an item (when a bookmark is directly rendered, the ewt_directAccess variable is set to true).
+  fragment: Bookmarking an item (when a bookmark is directly rendered, the ewt_directAccess variable is set to true).
   foreach: iteration
   var:
-  render: all, content, tag, none; e.g.: ewt-render="(ewt_context.bookmark = 'bookmark1') ? 'body' : 'none'"
+  render: all, content, tag, none; e.g.: ewt-render="(ewt_context.fragment = 'fragment1') ? 'all' : 'none'"
   text: Alternative content for the tag
   utext: Unescaped alternative content for the tag.
   attr: Map, attribute values
@@ -52,27 +52,35 @@
 <html>
 <head />
 <body>
-  <table id='fddd' data-ewt-bookmark="bookmark1" data-ewt-attr="['id' : 'myTable']" data-ewt-render="'all'">
-    <tr data-ewt-foreach="[({'user'}) : users]"
-        data-ewt-var="['rowId' : user.userId]"
-        data-ewt-attr="['id' : user]">
-      <td><span data-ewt-text="user.firstName">John</span></td>
-      <td><span data-ewt-utext="user.lastName">Doe</span></td>
-      <td><div data-ewt-text="'someText'" /></td>
-      <td id="shouldNotAppear" data-ewt-attr-id="null">
+  <table id='fddd' data-eht-fragment="fragment1" data-eht-attr="['id' : 'myTable']" data-eht-render="'all'">
+    <tr data-eht-foreach="[({'user'}) : users]"
+        data-eht-var="['rowId' : user.userId]"
+        data-eht-attr="['id' : user]">
+      <td><span data-eht-text="user.firstName">John</span></td>
+      <td><span data-eht-utext="user.lastName">Doe</span></td>
+      <td><div data-eht-text="'someText'" /></td>
+      <td id="shouldNotAppear" data-eht-attr-id="null">
         
       </td>
     </tr>
-    <tr data-ewt-render="none" data-ewt-var="fdf99-)_*()">
+    <tr data-eht-render="none" data-eht-var="fdf99-)_*()">
       <td><span style="color: red;">fff<a href="aaa"><span>
   </table>
   <!--[if IE 8]>
 <p>Welcome to Internet Explorer 8.</p>
 <![endif]-->
 
-  <script type="text/ewt-javascript" data-ext-parsecontent="true" data-ewt-attr="['type' : 'text/javascript']">
+  <div id="fragment2" data-eht-fragment="fragment2" data-eht-render="(template_ctx.fragmentId == 'fragment2') ? 'all' : 'none'">
+    Hello fragment world!
+  </div>
+  <div>Fragment world will be next</div>
+  <div data-eht-utext="template_ctx.renderFragment('fragment2')" data-eht-render="'content'">
+    This will be replaced.
+  </div>
+
+  <script type="text/ewt-javascript" data-eht-inline="text" data-eht-attr="['type' : 'text/javascript']">
     @{
-		  usersss.size()}(rowId) {
+		  users.size()}(rowId) {
       
       ewt.reRender();
     }
@@ -80,8 +88,9 @@
     checker.activate();
   </script>
   
+  
 </body>
 </html>
 <!-- 
-  <a href="" data-ewt-attr-href="&apos;http://everit.org&apos;" />
+  <a href="" data-eht-attr-href="&apos;http://everit.org&apos;" />
  -->

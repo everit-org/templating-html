@@ -220,10 +220,21 @@ public class UniversalIterable<T> implements Iterable<T> {
 
     private final CollectionTypes collectionType;
 
+    /**
+     * Constructor of universal iterable.
+     *
+     * @param collection
+     *            The collection that is converted to an iterable.
+     * @throws IllegalArgumentException
+     *             if the collection object cannot be converted.
+     * @throws NullPointerException
+     *             if the collection parameter is null.
+     */
     public UniversalIterable(final Object collection) {
         if (collection == null) {
             throw new NullPointerException("Collection must not be null");
         }
+
         this.collection = collection;
         if (collection instanceof Iterable) {
             collectionType = CollectionTypes.ITERABLE;
