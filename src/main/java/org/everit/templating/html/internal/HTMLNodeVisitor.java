@@ -39,6 +39,14 @@ import org.htmlparser.visitors.NodeVisitor;
 
 public class HTMLNodeVisitor extends NodeVisitor {
 
+    private static class InlineContext {
+        public int column;
+
+        public int lineNumber;
+
+        public TemplateCompiler templateCompiler;
+    }
+
     private enum VisitMode {
         INLINE, NONE, NORMAL
     }
@@ -68,15 +76,19 @@ public class HTMLNodeVisitor extends NodeVisitor {
         }
     }
 
+    private int column;
+
     private StringBuilder currentSB = new StringBuilder();
 
     private final String ewtAttributePrefix;
 
     private final ExpressionCompiler expressionCompiler;
 
-    private String inline = null;
-
     private final Map<String, TemplateCompiler> inlineCompilers;
+
+    private InlineContext inlineContext = null;
+
+    private int lineNumber;
 
     private ParentNode parentNode;
 
@@ -100,6 +112,8 @@ public class HTMLNodeVisitor extends NodeVisitor {
         this.expressionCompiler = expressionCompiler;
         visitorPath.add(new VisitorPathElement().withEwtNode(rootNode));
 
+        this.lineNumber = parserConfiguration.getLineNumber();
+        this.column = parserConfiguration.getColumn();
     }
 
     private void appendCurrentSBAndClear() {
@@ -113,8 +127,11 @@ public class HTMLNodeVisitor extends NodeVisitor {
         try {
             String attributeValue = attribute.getValue();
             attributeValue = HTMLTemplatingUtil.unescape(attributeValue);
-            // TODO pass a parserConfiguration where position is actualized
-            return new CompiledExpressionHolder(expressionCompiler.compile(attributeValue, parserConfiguration),
+
+            ParserConfiguration currentParserConfig = new ParserConfiguration(parserConfiguration);
+            // TODO
+
+            return new CompiledExpressionHolder(expressionCompiler.compile(attributeValue, currentParserConfig),
                     attribute);
         } catch (RuntimeException e) {
             e.printStackTrace();
@@ -221,6 +238,21 @@ public class HTMLNodeVisitor extends NodeVisitor {
         return rootNode;
     }
 
+    private void incrementLineAndColumn(final String text) {
+        if (text == null) {
+            return;
+        }
+        for (int i = 0; i < text.length(); i++) {
+            if (text.charAt(i) == '\n') {
+                column = 1;
+                lineNumber++;
+            } else {
+                column++;
+            }
+        }
+
+    }
+
     private String inline(final Tag tag) {
         String renderAttributeName = ewtAttributePrefix + "inline";
         String renderValue = tag.getAttribute(renderAttributeName);
@@ -285,7 +317,7 @@ public class HTMLNodeVisitor extends NodeVisitor {
                 currentSB.append(tag.toHtml(true));
                 return;
             }
-            TemplateCompiler inlineCompiler = inlineCompilers.get(inline);
+            TemplateCompiler inlineCompiler = inlineCompilers.get(inlineContext);
             if (inlineCompiler == null) {
                 throw new RuntimeException();
                 // TODO throw nice exception
@@ -358,11 +390,12 @@ public class HTMLNodeVisitor extends NodeVisitor {
     }
 
     @Override
-    public void visitStringNode(final Text string) {
+    public void visitStringNode(final Text text) {
+        incrementLineAndColumn(text.getText());
         if (visitMode == VisitMode.NONE) {
             return;
         }
-        currentSB.append(string.toPlainTextString());
+        currentSB.append(text.toPlainTextString());
     }
 
     @Override
@@ -423,7 +456,17 @@ public class HTMLNodeVisitor extends NodeVisitor {
                 parentNode = tagNode;
                 if (tmpInline != null) {
                     visitMode = VisitMode.INLINE;
-                    this.inline = tmpInline;
+                    TemplateCompiler inlineCompiler = inlineCompilers.get(tmpInline);
+                    if (inlineCompiler == null) {
+                        throw new RuntimeException();
+                        // TODO
+                    }
+
+                    InlineContext tmpInlineContext = new InlineContext();
+                    tmpInlineContext.templateCompiler = inlineCompiler;
+                    tmpInlineContext.column ;
+
+                    this.inlineContext = tmpInline;
                     specialVisitDepth = visitorPath.size();
                 }
             }
