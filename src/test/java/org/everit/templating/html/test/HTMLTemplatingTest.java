@@ -32,6 +32,8 @@ import org.everit.templating.CompiledTemplate;
 import org.everit.templating.TemplateCompiler;
 import org.everit.templating.html.HTMLTemplateCompiler;
 import org.everit.templating.text.TextTemplateCompiler;
+import org.everit.templating.util.CompileException;
+import org.junit.Assert;
 import org.junit.Test;
 
 public class HTMLTemplatingTest {
@@ -57,6 +59,21 @@ public class HTMLTemplatingTest {
                 throw new RuntimeException(e);
             }
         }
+    }
+
+    private TemplateCompiler createTestEngine() {
+        Map<String, TemplateCompiler> inlineCompilers = new HashMap<String, TemplateCompiler>();
+        MvelExpressionCompiler expressionCompiler = new MvelExpressionCompiler();
+        inlineCompilers.put("text", new TextTemplateCompiler(expressionCompiler));
+        TemplateCompiler engine = new HTMLTemplateCompiler(expressionCompiler, inlineCompilers);
+        return engine;
+    }
+
+    private ParserConfiguration createTestParserConfiguration() {
+        ParserConfiguration parserConfiguration = new ParserConfiguration(this.getClass().getClassLoader());
+        parserConfiguration.setStartColumn(11);
+        parserConfiguration.setStartRow(10);
+        return parserConfiguration;
     }
 
     @Test
@@ -85,6 +102,18 @@ public class HTMLTemplatingTest {
     }
 
     @Test
+    public void testDuplicateAttribute() {
+        try {
+            createTestEngine().compile("<test data-eht-text='\"\"' data-eht-utext='\"\"' />",
+                    createTestParserConfiguration());
+            Assert.fail("Exception should have been thrown");
+        } catch (CompileException e) {
+            Assert.assertEquals(10, e.getLineNumber());
+            Assert.assertEquals(52, e.getColumn());
+        }
+    }
+
+    @Test
     public void testFull() {
         MvelExpressionCompiler expressionCompiler = new MvelExpressionCompiler();
 
@@ -95,8 +124,8 @@ public class HTMLTemplatingTest {
 
         CompiledTemplate compiledTemplate = engine.compile(readTemplate("META-INF/test1.html"),
                 new ParserConfiguration(this.getClass().getClassLoader()));
-        Writer writer = new OutputStreamWriter(System.out);
-        // Writer writer = new NullWriter();
+        // Writer writer = new OutputStreamWriter(System.out);
+        Writer writer = new NullWriter();
 
         HashMap<String, Object> vars = new HashMap<String, Object>();
 
@@ -107,7 +136,7 @@ public class HTMLTemplatingTest {
         vars.put("users", users);
 
         long startTime = System.nanoTime();
-        int n = 1;
+        int n = 200000;
         for (int i = 0; i < n; i++) {
             compiledTemplate.render(writer, vars);
         }
@@ -120,6 +149,57 @@ public class HTMLTemplatingTest {
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
+        }
+
+    }
+
+    @Test
+    public void testInlineAndTextTogether() {
+        try {
+            createTestEngine().compile("<test data-eht-inline='text' data-eht-text=\"'someText'\" />",
+                    createTestParserConfiguration());
+            Assert.fail("Should throw an exception");
+        } catch (CompileException e) {
+            Assert.assertEquals(12, e.getColumn());
+            Assert.assertEquals(10, e.getLineNumber());
+        }
+    }
+
+    @Test
+    public void testInlineException() {
+        TemplateCompiler engine = createTestEngine();
+
+        ParserConfiguration parserConfiguration = createTestParserConfiguration();
+        try {
+            engine.compile("<test data-eht-inline='noSuchInline'></test>", parserConfiguration);
+            Assert.fail("Should throw an exception");
+        } catch (CompileException e) {
+            Assert.assertEquals(34, e.getColumn());
+            Assert.assertEquals(10, e.getLineNumber());
+        }
+
+        try {
+            engine.compile("\n<test data-eht-inline='noSuchInline'></test>", parserConfiguration);
+            Assert.fail("Should throw an exception");
+        } catch (CompileException e) {
+            Assert.assertEquals(24, e.getColumn());
+            Assert.assertEquals(11, e.getLineNumber());
+        }
+
+        try {
+            engine.compile("\n<test data-eht-inline='text'>@{[[][}</test>", parserConfiguration);
+            Assert.fail("Should throw an exception");
+        } catch (org.mvel2.CompileException e) {
+            Assert.assertEquals(32, e.getColumn());
+            Assert.assertEquals(11, e.getLineNumber());
+        }
+
+        try {
+            engine.compile("\n<test data-eht-inline='text'>\n@{[[][}</test>", parserConfiguration);
+            Assert.fail("Should throw an exception");
+        } catch (org.mvel2.CompileException e) {
+            Assert.assertEquals(3, e.getColumn());
+            Assert.assertEquals(12, e.getLineNumber());
         }
 
     }

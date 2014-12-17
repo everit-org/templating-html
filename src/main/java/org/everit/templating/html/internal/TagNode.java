@@ -299,7 +299,7 @@ public class TagNode extends ParentNode {
             templateContext.runInBlock(new Supplier<Object>() {
 
                 @Override
-                public Object call() {
+                public Object get() {
                     renderEach(templateContext, foreachMap);
                     return null;
                 }
@@ -480,7 +480,7 @@ public class TagNode extends ParentNode {
             templateContext.runInBlock(new Supplier<Object>() {
 
                 @Override
-                public Object call() {
+                public Object get() {
                     templateContext.getVars().putAll(tagVars);
                     renderContent(templateContext);
                     return null;

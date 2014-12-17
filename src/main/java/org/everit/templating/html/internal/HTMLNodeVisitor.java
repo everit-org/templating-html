@@ -28,11 +28,14 @@ import org.everit.expression.ParserConfiguration;
 import org.everit.templating.CompiledTemplate;
 import org.everit.templating.TemplateCompiler;
 import org.everit.templating.html.internal.util.HTMLTemplatingUtil;
+import org.everit.templating.util.CompileException;
+import org.htmlparser.Attribute;
 import org.htmlparser.Node;
 import org.htmlparser.Remark;
 import org.htmlparser.Tag;
 import org.htmlparser.Text;
 import org.htmlparser.lexer.Lexer;
+import org.htmlparser.lexer.Page;
 import org.htmlparser.lexer.PageAttribute;
 import org.htmlparser.util.ParserException;
 import org.htmlparser.visitors.NodeVisitor;
@@ -40,11 +43,26 @@ import org.htmlparser.visitors.NodeVisitor;
 public class HTMLNodeVisitor extends NodeVisitor {
 
     private static class InlineContext {
-        public int column;
 
-        public int lineNumber;
+        public Position position;
 
         public TemplateCompiler templateCompiler;
+
+        public InlineContext(final TemplateCompiler templateCompiler, final Position position) {
+            this.templateCompiler = templateCompiler;
+            this.position = position;
+        }
+    }
+
+    private static class Position {
+
+        public int column;
+        public int row;
+
+        public Position(final int row, final int column) {
+            this.row = row;
+            this.column = column;
+        }
     }
 
     private enum VisitMode {
@@ -54,6 +72,9 @@ public class HTMLNodeVisitor extends NodeVisitor {
     private static class VisitorPathElement {
 
         public ParentNode ewtNode;
+
+        // TODO store tagcontext with a char array about the tag so it will be only once in memory when expressions are
+        // compiled.
 
         public Tag tag;
 
@@ -76,8 +97,6 @@ public class HTMLNodeVisitor extends NodeVisitor {
         }
     }
 
-    private int column;
-
     private StringBuilder currentSB = new StringBuilder();
 
     private final String ewtAttributePrefix;
@@ -88,8 +107,6 @@ public class HTMLNodeVisitor extends NodeVisitor {
 
     private InlineContext inlineContext = null;
 
-    private int lineNumber;
-
     private ParentNode parentNode;
 
     private final ParserConfiguration parserConfiguration;
@@ -97,6 +114,10 @@ public class HTMLNodeVisitor extends NodeVisitor {
     private final RootNode rootNode;
 
     private int specialVisitDepth = 0;
+
+    private final int startColumn;
+
+    private final int startRow;
 
     private VisitMode visitMode = VisitMode.NORMAL;
 
@@ -112,8 +133,8 @@ public class HTMLNodeVisitor extends NodeVisitor {
         this.expressionCompiler = expressionCompiler;
         visitorPath.add(new VisitorPathElement().withEwtNode(rootNode));
 
-        this.lineNumber = parserConfiguration.getLineNumber();
-        this.column = parserConfiguration.getColumn();
+        this.startRow = parserConfiguration.getStartRow();
+        this.startColumn = parserConfiguration.getStartColumn();
     }
 
     private void appendCurrentSBAndClear() {
@@ -123,21 +144,24 @@ public class HTMLNodeVisitor extends NodeVisitor {
         }
     }
 
+    private Position calculatePosition(final Page page, final int cursor) {
+        int row = page.row(cursor);
+        int column = page.column(cursor) + (row == 0 ? startColumn : 1);
+        row = row + startRow;
+        return new Position(row, column);
+
+    }
+
     private CompiledExpressionHolder compileExpression(final PageAttribute attribute) {
-        try {
-            String attributeValue = attribute.getValue();
-            attributeValue = HTMLTemplatingUtil.unescape(attributeValue);
+        String attributeValue = attribute.getValue();
+        attributeValue = HTMLTemplatingUtil.unescape(attributeValue);
 
-            ParserConfiguration currentParserConfig = new ParserConfiguration(parserConfiguration);
-            // TODO
+        ParserConfiguration currentParserConfig = new ParserConfiguration(parserConfiguration);
+        // TODO
 
-            return new CompiledExpressionHolder(expressionCompiler.compile(attributeValue, currentParserConfig),
-                    attribute);
-        } catch (RuntimeException e) {
-            e.printStackTrace();
-            // TODO throw nice exception
-            return null;
-        }
+        return new CompiledExpressionHolder(expressionCompiler.compile(attributeValue, currentParserConfig),
+                attribute);
+
     }
 
     private void fillEwtTagNodeWithAttribute(final TagNode tagNode, final PageAttribute attribute,
@@ -238,27 +262,6 @@ public class HTMLNodeVisitor extends NodeVisitor {
         return rootNode;
     }
 
-    private void incrementLineAndColumn(final String text) {
-        if (text == null) {
-            return;
-        }
-        for (int i = 0; i < text.length(); i++) {
-            if (text.charAt(i) == '\n') {
-                column = 1;
-                lineNumber++;
-            } else {
-                column++;
-            }
-        }
-
-    }
-
-    private String inline(final Tag tag) {
-        String renderAttributeName = ewtAttributePrefix + "inline";
-        String renderValue = tag.getAttribute(renderAttributeName);
-        return renderValue;
-    }
-
     private boolean isEwtNode(final Vector<PageAttribute> attributes) {
 
         for (PageAttribute pageAttribute : attributes) {
@@ -277,10 +280,51 @@ public class HTMLNodeVisitor extends NodeVisitor {
         return HTMLTemplatingUtil.attributeConstantEquals("none", renderValue);
     }
 
+    private TemplateCompiler resolveInlineCompiler(final Tag tag) {
+        String inlineAttributeName = ewtAttributePrefix + "inline";
+        String inlineAttributeValue = tag.getAttribute(inlineAttributeName);
+
+        if (inlineAttributeValue != null) {
+            TemplateCompiler inlineCompiler = inlineCompilers.get(inlineAttributeValue);
+            if (inlineCompiler == null) {
+                Attribute inlineAttribute = tag.getAttributeEx(inlineAttributeName);
+                throwCompileExceptionForAttribute("No compiler found for inline type: " + inlineAttributeValue,
+                        tag, (PageAttribute) inlineAttribute);
+            }
+            return inlineCompiler;
+        }
+
+        return null;
+    }
+
+    private void throwCompileExceptionForAttribute(final String message, final Tag tag, final PageAttribute attribute) {
+        Page page = tag.getPage();
+        int tagStartPosition = tag.getStartPosition();
+        int tagEndPosition = tag.getEndPosition();
+
+        char[] expr = new char[tagEndPosition - tagStartPosition];
+        page.getText(expr, 0, tagStartPosition, tagEndPosition);
+
+        int positionInPage = tagStartPosition + 1;
+        int cursor = 1;
+        if (attribute != null) {
+            positionInPage = attribute.getValueStartPosition();
+            cursor = positionInPage - tagStartPosition;
+        }
+
+        CompileException e = new CompileException(message, expr, cursor);
+
+        Position position = calculatePosition(page, positionInPage);
+        e.setColumn(position.column);
+        e.setLineNumber(position.row);
+        throw e;
+
+    }
+
     private void throwIfAttributeAlreadyDefined(final PageAttribute attribute,
             final CompiledExpressionHolder expression, final TagNode tagNode) {
         if (expression != null) {
-            // TODO throw exception
+            throwCompileExceptionForAttribute("Attribute is defined more than once", tagNode.getTag(), attribute);
         }
     }
 
@@ -317,14 +361,12 @@ public class HTMLNodeVisitor extends NodeVisitor {
                 currentSB.append(tag.toHtml(true));
                 return;
             }
-            TemplateCompiler inlineCompiler = inlineCompilers.get(inlineContext);
-            if (inlineCompiler == null) {
-                throw new RuntimeException();
-                // TODO throw nice exception
-            }
-            // TODO pass a parserConfiguration where position is actualized
-            CompiledTemplate compiledInline = inlineCompiler.compile(currentSB.toString(),
-                    parserConfiguration);
+
+            TemplateCompiler inlineCompiler = inlineContext.templateCompiler;
+            ParserConfiguration inlinePC = new ParserConfiguration(parserConfiguration.getClassLoader());
+            inlinePC.setStartColumn(inlineContext.position.column);
+            inlinePC.setStartRow(inlineContext.position.row);
+            CompiledTemplate compiledInline = inlineCompiler.compile(currentSB.toString(), inlinePC);
             parentNode.getChildren().add(new InlineNode(compiledInline));
             currentSB = new StringBuilder();
             visitMode = VisitMode.NORMAL;
@@ -378,8 +420,7 @@ public class HTMLNodeVisitor extends NodeVisitor {
                 node.accept(this);
             }
         } catch (ParserException e) {
-            e.printStackTrace();
-            // TODO throw exception
+            throw new UncheckedParserException(e);
         }
         visitorPath = previousVisitorPath;
         List<HTMLNode> remarkNodes = parentNode.getChildren();
@@ -391,7 +432,6 @@ public class HTMLNodeVisitor extends NodeVisitor {
 
     @Override
     public void visitStringNode(final Text text) {
-        incrementLineAndColumn(text.getText());
         if (visitMode == VisitMode.NONE) {
             return;
         }
@@ -429,7 +469,7 @@ public class HTMLNodeVisitor extends NodeVisitor {
             TagNode tagNode = new TagNode(tag);
             tagNode.setTagName(tag.getRawTagName());
             Iterator<PageAttribute> iterator = attributes.iterator();
-            // First one is the name of the tag
+            // First attribute is the name of the tag
             iterator.next();
 
             StringBuffer previousString = new StringBuffer();
@@ -444,29 +484,28 @@ public class HTMLNodeVisitor extends NodeVisitor {
                 }
             }
 
-            String tmpInline = inline(tag);
+            TemplateCompiler inlineCompiler = resolveInlineCompiler(tag);
 
-            if (tmpInline != null && tagNode.getTextExpressionHolder() != null) {
-                // TODO throw exception that the two attributes cannot be used together.
+            if (inlineCompiler != null && tagNode.getTextExpressionHolder() != null) {
+                throwCompileExceptionForAttribute("Inline and text cannot be used together within the same tag", tag,
+                        null);
             }
 
             parentNode.getChildren().add(tagNode);
             if (!tag.isEmptyXmlTag()) {
                 visitorPath.add(new VisitorPathElement().withEwtNode(tagNode).withTag(tag));
                 parentNode = tagNode;
-                if (tmpInline != null) {
+                if (inlineCompiler != null) {
                     visitMode = VisitMode.INLINE;
-                    TemplateCompiler inlineCompiler = inlineCompilers.get(tmpInline);
-                    if (inlineCompiler == null) {
-                        throw new RuntimeException();
-                        // TODO
-                    }
 
-                    InlineContext tmpInlineContext = new InlineContext();
-                    tmpInlineContext.templateCompiler = inlineCompiler;
-                    tmpInlineContext.column ;
+                    int tagEndPosition = tag.getEndPosition() + 1;
+                    Page page = tag.getPage();
 
-                    this.inlineContext = tmpInline;
+                    int pageRow = page.row(tagEndPosition);
+                    int column = page.column(tagEndPosition) + (pageRow == 0 ? startColumn : 1) - 1;
+                    int row = startRow + pageRow;
+
+                    this.inlineContext = new InlineContext(inlineCompiler, new Position(row, column));
                     specialVisitDepth = visitorPath.size();
                 }
             }
