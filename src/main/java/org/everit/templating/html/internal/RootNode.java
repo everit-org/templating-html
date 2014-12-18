@@ -19,29 +19,42 @@ package org.everit.templating.html.internal;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.everit.templating.html.internal.util.Coordinate;
+import org.everit.templating.html.internal.util.HTMLTemplatingUtil;
+import org.everit.templating.util.CompileException;
+import org.htmlparser.Tag;
+import org.htmlparser.lexer.PageAttribute;
+
 public class RootNode extends ParentNode {
 
-    private final Map<String, TagNode> bookmarks = new HashMap<String, TagNode>();
+    private final Map<String, TagNode> fragments = new HashMap<String, TagNode>();
 
-    public void addBookmark(final String name, final TagNode tagNode) {
+    public void addFragment(final String name, final TagNode tagNode, final PageAttribute attribute,
+            final Coordinate templateStartCoordinate, final Tag tag) {
         if ("root".equals(name)) {
-            // TODO throw nice exception.
-            // throw new CompileException("'root' cannot be used as a boomark name as it is reserved for the"
-            // + " root element");
+            HTMLTemplatingUtil.throwCompileExceptionForAttribute(
+                    "'root' cannot be used as a fragment id as it is reserved for the template itself", tag, attribute,
+                    true, templateStartCoordinate);
         }
-        TagNode previous = bookmarks.get(name);
+        TagNode previous = fragments.get(name);
         if (previous != null) {
-            // TODO throw nice exception
-            // throw new CompileException("Duplicate bookmark: " + name);
+            TagInfo tagInfo = new TagInfo(tag);
+            AttributeInfo attributeInfo = new AttributeInfo(attribute, tagInfo, templateStartCoordinate);
+
+            CompileException e = new CompileException("Duplicate fragment: " + name, new TagInfo(tag).chars,
+                    attributeInfo.valueCursorInTag);
+            e.setColumn(attributeInfo.valueStartCoordinate.column);
+            e.setLineNumber(attributeInfo.valueStartCoordinate.row);
+            throw e;
         }
-        bookmarks.put(name, tagNode);
+        fragments.put(name, tagNode);
     }
 
-    public ParentNode getBookmark(final String name) {
+    public ParentNode getFragment(final String name) {
         if ("root".equals(name)) {
             return this;
         }
-        return bookmarks.get(name);
+        return fragments.get(name);
     }
 
     @Override

@@ -16,6 +16,11 @@
  */
 package org.everit.templating.html.internal.util;
 
+import org.everit.templating.util.CompileException;
+import org.htmlparser.Tag;
+import org.htmlparser.lexer.Page;
+import org.htmlparser.lexer.PageAttribute;
+
 public class HTMLTemplatingUtil {
 
     public static boolean attributeConstantEquals(final String expectedAttributeValue, String currentAttributeValue) {
@@ -27,12 +32,22 @@ public class HTMLTemplatingUtil {
         if ((currentAttributeValue.startsWith("\"") && currentAttributeValue.endsWith("\""))
                 || (currentAttributeValue.startsWith("'") && currentAttributeValue.endsWith("'"))) {
             currentAttributeValue = currentAttributeValue.substring(1, currentAttributeValue.length() - 1);
+        } else {
+            return false;
         }
 
         if (currentAttributeValue.equalsIgnoreCase(expectedAttributeValue)) {
             return true;
         }
         return false;
+    }
+
+    public static Coordinate calculateCoordinate(final Page page, final int cursor, final Coordinate coordinateOffset) {
+        int row = page.row(cursor);
+        int column = page.column(cursor) + (row == 0 ? coordinateOffset.column : 1);
+        row = row + coordinateOffset.row;
+        return new Coordinate(row, column);
+
     }
 
     public static String escape(final String textString) {
@@ -69,6 +84,37 @@ public class HTMLTemplatingUtil {
             n[i] = c;
         }
         return new String(n);
+    }
+
+    public static void throwCompileExceptionForAttribute(final String message, final Tag tag,
+            final PageAttribute attribute,
+            final boolean positionOfAttributeValue, final Coordinate startPosition) {
+        Page page = tag.getPage();
+        int tagStartPosition = tag.getStartPosition();
+        int tagEndPosition = tag.getEndPosition();
+
+        char[] expr = new char[tagEndPosition - tagStartPosition];
+        page.getText(expr, 0, tagStartPosition, tagEndPosition);
+
+        int positionInPage = tagStartPosition + 1;
+        int cursor = 1;
+        if (attribute != null) {
+            if (positionOfAttributeValue) {
+                positionInPage = attribute.getValueStartPosition();
+            } else {
+                positionInPage = attribute.getNameStartPosition();
+            }
+            cursor = positionInPage - tagStartPosition;
+
+        }
+
+        CompileException e = new CompileException(message, expr, cursor);
+
+        Coordinate position = calculateCoordinate(page, positionInPage, startPosition);
+        e.setColumn(position.column);
+        e.setLineNumber(position.row);
+        throw e;
+
     }
 
     public static String unescape(final String text) {

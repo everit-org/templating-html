@@ -17,25 +17,16 @@
 package org.everit.templating.html.internal;
 
 import org.everit.expression.CompiledExpression;
-import org.htmlparser.lexer.PageAttribute;
 
 public class CompiledExpressionHolder {
 
-    private final CompiledExpression compiledExpression;
+    public final AttributeInfo attributeInfo;
 
-    private final PageAttribute pageAttribute;
+    public final CompiledExpression compiledExpression;
 
-    public CompiledExpressionHolder(final CompiledExpression compiledExpression, final PageAttribute pageAttribute) {
+    public CompiledExpressionHolder(final CompiledExpression compiledExpression, final AttributeInfo attributeInfo) {
         this.compiledExpression = compiledExpression;
-        this.pageAttribute = pageAttribute;
-    }
-
-    public CompiledExpression getCompiledExpression() {
-        return compiledExpression;
-    }
-
-    public PageAttribute getPageAttribute() {
-        return pageAttribute;
+        this.attributeInfo = attributeInfo;
     }
 
 }

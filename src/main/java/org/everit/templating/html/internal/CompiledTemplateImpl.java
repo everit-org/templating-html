@@ -45,7 +45,7 @@ public class CompiledTemplateImpl implements CompiledTemplate {
             parentNode = rootNode;
             evaluatedBookmark = TemplateConstants.FRAGMENT_ROOT;
         } else {
-            parentNode = rootNode.getBookmark(fragmentId);
+            parentNode = rootNode.getFragment(fragmentId);
             if (parentNode == null) {
                 return;
             }

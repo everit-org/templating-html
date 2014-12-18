@@ -16,24 +16,7 @@
     along with Everit - HTML Templating.  If not, see <http://www.gnu.org/licenses/>.
 
 -->
-<!--
 
-    This file is part of Everit - Web Templating.
-
-    Everit - Web Templating is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    Everit - Web Templating is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Lesser General Public License for more details.
-
-    You should have received a copy of the GNU Lesser General Public License
-    along with Everit - Web Templating.  If not, see <http://www.gnu.org/licenses/>.
-
--->
 <!--
   fragment: Bookmarking an item (when a bookmark is directly rendered, the ewt_directAccess variable is set to true).
   foreach: iteration
@@ -47,11 +30,60 @@
   attrprepend-*:
   attrappend:
   attrappend-*:
-  parsecontent: default false
+  inline: default null
 -->
 <html>
 <head />
 <body>
+
+  <!-- Escaped text -->\
+  <p data-eht-text="'Hello world!'">This text should be replaced with Hello world!</p>
+
+  <!-- Unescaped text -->
+  <p data-eht-utext="'&lt;span style=&quot;font-weight: bold;&quot;&gt;Hello world!&lt;/span&gt;'">This text should be replaced with bold hello world!</p>
+  
+  <!-- Attribute creation -->
+  <p data-eht-attr="['class' : 'font-weight: bold;']">This text should be bold as class is created with attr map.</p>
+  
+  <p  data-eht-attr-class="'font-weight: bold;'">This text should be bold as class is created with attr-*.</p>
+  
+  <p  data-eht-attr-class="'font-weight: bold;'" data-eht-attr="['class' : 'font-weight: italic;']">This text should be italic as class is created with both attr map and attr-*.</p>
+  
+  <!-- Attribute override -->
+  
+  <p class="font-weight: normal;" data-eht-attr="['class' : 'font-weight: bold;']">This text should be bold as class is replaced with attr map.</p>
+  
+  <p class="font-weight: normal;" data-eht-attr-class="'font-weight: bold;'">This text should be bold as class is replaced with attr-*.</p>
+  
+  <p class="font-weight: normal;" data-eht-attr-class="'font-weight: bold;'" data-eht-attr="['class' : 'font-weight: italic;']">This text should be italic as class is replaced with both attr map and attr-*.</p>
+  
+  <!-- Attribute prepending and appending -->
+  
+  <p class="font-weight: normal;" data-eht-attr="['class' : 'font-weight: bold;']" data-eht-attrprepend="['class' : 'font-size: 2em; ']" data-eht-attrappend="['class' : ' color: red;']">This red text should be large and bold as class is replaced, appended and prepended.</p>
+  
+  <p data-eht-attr="['class' : 'font-weight: bold;']" data-eht-attrprepend="['class' : 'font-size: 2em; ']" data-eht-attrappend="['class' : ' color: red;']">This red text should be large and bold as class is created with append and prepended.</p>
+  
+  <p data-eht-attrprepend-class="'font-weight: bold;'">Bold text with prepend-*</p>
+  
+  <p data-eht-attrappend-class="'font-weight: bold;'">Bold text with append-*</p>
+  
+  <p data-eht-attrprepend-class="'color: red; '" data-eht-attrappend-class="'font-weight: bold;'">Bold red text with append-*</p>
+
+  <!-- Test variable creation -->
+  
+  <p data-eht-var="['hello_world' : 'Hello world']" data-eht-text="hello_world" />
+  <p data-eht-var="['hello_world' : 'Hello world']" data-eht-text="hello_world + ' again'" />
+  
+  <!-- Test render -->
+  <p data-eht-render="'all'">Should be rendered</p>
+  <p><span data-eht-render="'content'">Only content inside p</span></p>
+  <p><div data-eht-render="'tag'">Oops, disappeared content</div></p>
+  <p data-eht-render="'' + 'none'"><span>Never appears</span></p>
+  <p data-eht-render="'' + 'none'">Never appears</p>
+  <p data-eht-render="'' + 'none'"><span>Never appears</p>
+  <p data-eht-render="'none'"><span>Never appears</p>
+  <p data-eht-render="'none'">Never appears</p>
+
   <table id='fddd' data-eht-fragment="fragment1" data-eht-attr="['id' : 'myTable']" data-eht-render="'all'">
     <tr data-eht-foreach="[({'user'}) : users]"
         data-eht-var="['rowId' : user.userId]"
@@ -63,7 +95,7 @@
         
       </td>
     </tr>
-    <tr data-eht-render="none" data-eht-var="fdf99-)_*()">
+    <tr data-eht-render="'none'" data-eht-var="fdf99-)_*()">
       <td><span style="color: red;">fff<a href="aaa"><span>
   </table>
   <!--[if IE 8]>
@@ -79,13 +111,7 @@
   </div>
 
   <script type="text/ewt-javascript" data-eht-inline="text" data-eht-attr="['type' : 'text/javascript']">
-    @{
-		  users.size()}(rowId) {
-      
-      ewt.reRender();
-    }
-
-    checker.activate();
+    var myVariable = @{users.size()};
   </script>
   
   

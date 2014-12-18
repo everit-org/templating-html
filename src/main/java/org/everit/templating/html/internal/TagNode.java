@@ -16,6 +16,7 @@
  */
 package org.everit.templating.html.internal;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -29,6 +30,7 @@ import org.everit.templating.html.internal.util.UniversalIterable;
 import org.everit.templating.util.Supplier;
 import org.everit.templating.util.TemplateWriter;
 import org.htmlparser.Tag;
+import org.htmlparser.lexer.Page;
 import org.htmlparser.lexer.PageAttribute;
 
 public class TagNode extends ParentNode {
@@ -87,7 +89,9 @@ public class TagNode extends ParentNode {
 
     private CompiledExpressionHolder attributePrependMapExpressionHolder;
 
-    private Tag endTag = null;
+    private final boolean emptyTag;
+
+    private String endTag = null;
 
     private boolean escapeText = false;
 
@@ -100,16 +104,25 @@ public class TagNode extends ParentNode {
      */
     private CompiledExpressionHolder renderExpressionHolder = null;
 
-    private final Tag tag;
+    private final int startPositionInTemplate;
 
     private String tagName;
 
     private CompiledExpressionHolder textExpressionHolder = null;
 
+    private final char[] textRepresentation;
+
     private CompiledExpressionHolder varExpressionHolder = null;
 
     public TagNode(final Tag tag) {
-        this.tag = tag;
+        this.emptyTag = tag.isEmptyXmlTag();
+        Page page = tag.getPage();
+        startPositionInTemplate = tag.getStartPosition();
+        int endPosition = tag.getEndPosition();
+        int length = endPosition - startPositionInTemplate;
+        textRepresentation = new char[length];
+        page.getText(textRepresentation, 0, startPositionInTemplate, endPosition);
+
     }
 
     private void assignForEachVariables(final Map<String, Object> vars, final ForeachItem item, final int index,
@@ -125,29 +138,21 @@ public class TagNode extends ParentNode {
         if (expressionHolder == null) {
             return null;
         }
-        try {
-            Object result = expressionHolder.getCompiledExpression().eval(templateContext.getVars());
-            if (result == null) {
-                return null;
-            }
 
-            if (!clazz.isAssignableFrom(result.getClass())) {
-                throw new RuntimeException();
-                // TODO throw nice exception
-                // throw new RenderException("The result type " + result.getClass()
-                // + " cannot be assigned to the expected type " + clazz.getName()
-                // + " after evaluating attribute: " + expressionHolder.getPageAttribute().toString());
-            }
-
-            @SuppressWarnings("unchecked")
-            R typedResult = (R) result;
-            return typedResult;
-        } catch (RuntimeException e) {
-            throw new RuntimeException(e);
-            // TODO throw nice exception
-            // throw new RenderException("Error during evaluating attribute: "
-            // + expressionHolder.getPageAttribute().toString(), e);
+        Object result = expressionHolder.compiledExpression.eval(templateContext.getVars());
+        if (result == null) {
+            return null;
         }
+
+        if (!clazz.isAssignableFrom(result.getClass())) {
+            throw new RenderException("The result type " + result.getClass()
+                    + " cannot be assigned to the expected type " + clazz.getName(), expressionHolder.attributeInfo);
+        }
+
+        @SuppressWarnings("unchecked")
+        R typedResult = (R) result;
+        return typedResult;
+
     }
 
     private Map<Object, Object> evaluateForeachMap(final TemplateContextImpl templateContext) {
@@ -170,12 +175,13 @@ public class TagNode extends ParentNode {
             return (RenderScope) renderValue;
         }
 
+        String renderString;
         if (!(renderValue instanceof String)) {
-            // TODO throw nice exception
-            // throw new RenderException("Unrecognized evaluated type '" + renderValue.getClass().getName()
-            // + "' of attribute: " + renderExpressionHolder.getPageAttribute().toString());
+            renderString = String.valueOf(renderValue);
+        } else {
+            renderString = (String) renderValue;
         }
-        String renderString = (String) renderValue;
+
         if (renderString.equalsIgnoreCase(RenderScope.ALL.toString())) {
             return RenderScope.ALL;
         }
@@ -188,30 +194,30 @@ public class TagNode extends ParentNode {
         if (renderString.equalsIgnoreCase(RenderScope.TAG.toString())) {
             return RenderScope.TAG;
         }
-        throw new RuntimeException();
-        // TODO throw nice exception.
-        // throw new RenderException("Unrecognized evaluated value '" + renderString
-        // + "' of attribute: " + renderExpressionHolder.getPageAttribute().toString());
+        throw new RenderException("Unrecognized value for render attribute: " + renderString,
+                renderExpressionHolder.attributeInfo);
     }
 
     private Map<String, Object> evaluateTagVariables(final TemplateContextImpl templateContext) {
         if (varExpressionHolder == null) {
             return null;
         }
-        CompiledExpression compiledExpression = varExpressionHolder.getCompiledExpression();
+        CompiledExpression compiledExpression = varExpressionHolder.compiledExpression;
         Object result = compiledExpression.eval(templateContext.getVars());
         if (result == null) {
             return null;
         }
         if (!(result instanceof Map)) {
-            // TODO throw nice exception
+            throw new RenderException("Unrecognized type at attribute override map: " + result.getClass(),
+                    varExpressionHolder.attributeInfo);
         }
         @SuppressWarnings("unchecked")
         Map<Object, Object> tagVarMap = (Map<Object, Object>) result;
 
         for (Object key : tagVarMap.keySet()) {
             if (key == null || !(key instanceof String)) {
-                // TODO throw nice error
+                throw new RenderException("Attribute override Map should have only String keys: " + key,
+                        varExpressionHolder.attributeInfo);
             }
         }
 
@@ -224,22 +230,16 @@ public class TagNode extends ParentNode {
         if (textExpressionHolder == null) {
             return null;
         } else {
-            try {
-                Object text = textExpressionHolder.getCompiledExpression().eval(vars);
-                if (text == null) {
-                    return "";
-                }
-                String textString = text.toString();
-                if (escapeText) {
-                    textString = HTMLTemplatingUtil.escape(textString);
-                }
-                return textString;
-            } catch (RuntimeException e) {
-                throw new RuntimeException(e);
-                // TODO throw nice exception
-                // throw new RenderException("Error during evaluating attribute: "
-                // + textExpressionHolder.getPageAttribute().toString(), e);
+            Object text = textExpressionHolder.compiledExpression.eval(vars);
+            if (text == null) {
+                return "";
             }
+            String textString = text.toString();
+            if (escapeText) {
+                textString = HTMLTemplatingUtil.escape(textString);
+            }
+            return textString;
+
         }
     }
 
@@ -265,10 +265,6 @@ public class TagNode extends ParentNode {
 
     public CompiledExpressionHolder getRenderExpressionHolder() {
         return renderExpressionHolder;
-    }
-
-    public Tag getTag() {
-        return tag;
     }
 
     public String getTagName() {
@@ -403,8 +399,8 @@ public class TagNode extends ParentNode {
 
             Object key = entry.getKey();
             if (key == null) {
-                throw new RuntimeException();
-                // TODO throw nice exception.
+                throw new RenderException("Null key in the foreach map: " + foreachMap.toString(),
+                        foreachExpressionHolder.attributeInfo);
             }
 
             Object value = entry.getValue();
@@ -414,8 +410,8 @@ public class TagNode extends ParentNode {
             }
 
             if (!value.getClass().isArray() && !(value instanceof Iterable)) {
-                throw new RuntimeException();
-                // TODO throw nice exception
+                throw new RenderException("Unrecognized value type in foreach map: " + value.getClass(),
+                        foreachExpressionHolder.attributeInfo);
             }
 
             String valueVarName = null;
@@ -426,16 +422,17 @@ public class TagNode extends ParentNode {
             } else if (key instanceof Object[]) {
                 Object[] foreachKeyObjArray = (Object[]) key;
                 if (foreachKeyObjArray.length == 0 || foreachKeyObjArray.length > 2) {
-                    throw new RuntimeException();
-                    // TODO throw nice exception
+                    throw new RenderException("Foreach key should contain one or two elements: "
+                            + Arrays.toString(foreachKeyObjArray),
+                            foreachExpressionHolder.attributeInfo);
                 }
                 valueVarName = String.valueOf(foreachKeyObjArray[0]);
                 if (foreachKeyObjArray.length == 2) {
                     indexVarName = String.valueOf(foreachKeyObjArray[1]);
                 }
             } else {
-                throw new RuntimeException();
-                // TODO throw nice exception
+                throw new RenderException("Unrecognized type for foreach key: " + key.getClass(),
+                        foreachExpressionHolder.attributeInfo);
             }
             ForeachItem item = new ForeachItem();
             item.collection = value;
@@ -588,9 +585,9 @@ public class TagNode extends ParentNode {
 
         if (!renderBody || (text == null && getChildren().size() == 0)) {
             if (endTag != null) {
-                writer.append(">").append(endTag.toHtml(true));
+                writer.append(">").append(endTag);
             } else {
-                if (tag.isEmptyXmlTag()) {
+                if (emptyTag) {
                     writer.append(" /");
                 }
                 writer.append(">");
@@ -602,10 +599,10 @@ public class TagNode extends ParentNode {
             } else {
                 renderChildren(templateContext);
             }
-            if (tag.isEmptyXmlTag()) {
+            if (emptyTag) {
                 writer.append("</").append(tagName).append(">");
             } else if (endTag != null) {
-                writer.append(endTag.toHtml(true));
+                writer.append(endTag);
             }
         }
 
@@ -638,7 +635,7 @@ public class TagNode extends ParentNode {
         this.attributePrependMapExpressionHolder = attributePrependMapExpression;
     }
 
-    public void setEndTag(final Tag endTag) {
+    public void setEndTag(final String endTag) {
         this.endTag = endTag;
     }
 

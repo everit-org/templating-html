@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -96,20 +97,83 @@ public class HTMLTemplatingTest {
         try {
             writer.flush();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 
     @Test
     public void testDuplicateAttribute() {
         try {
+            createTestEngine().compile("<test id='' id='' data-eht-attr-id='' />",
+                    createTestParserConfiguration());
+            Assert.fail("Exception should have been thrown");
+        } catch (CompileException e) {
+            Assert.assertEquals(10, e.getLineNumber());
+            Assert.assertEquals(23, e.getColumn());
+        }
+    }
+
+    @Test
+    public void testDuplicateEHTAttribute() {
+        try {
             createTestEngine().compile("<test data-eht-text='\"\"' data-eht-utext='\"\"' />",
                     createTestParserConfiguration());
             Assert.fail("Exception should have been thrown");
         } catch (CompileException e) {
             Assert.assertEquals(10, e.getLineNumber());
-            Assert.assertEquals(52, e.getColumn());
+            Assert.assertEquals(36, e.getColumn());
+        }
+    }
+
+    @Test
+    public void testDuplicateFragmentId() {
+        try {
+            createTestEngine().compile("<test data-eht-fragment='fragment1'  /><test data-eht-fragment='fragment1' />",
+                    createTestParserConfiguration());
+            Assert.fail("Exception should have been thrown");
+        } catch (CompileException e) {
+            Assert.assertEquals(10, e.getLineNumber());
+            Assert.assertEquals(75, e.getColumn());
+        }
+    }
+
+    @Test
+    public void testForeachInconsistentType() {
+        try {
+            createTestEngine().compile("<test data-eht-foreach=\"'not a Map'\"  />",
+                    createTestParserConfiguration()).render(new StringWriter(), new HashMap<String, Object>());
+
+            Assert.fail("Exception should have been thrown");
+        } catch (CompileException e) {
+            Assert.assertEquals(10, e.getLineNumber());
+            Assert.assertEquals(35, e.getColumn());
+        }
+    }
+
+    @Test
+    public void testForeachNullKey() {
+        try {
+            createTestEngine().compile("<test data-eht-foreach='[null : ({\"\"})]'  />",
+                    createTestParserConfiguration()).render(new StringWriter(), new HashMap<String, Object>());
+
+            Assert.fail("Exception should have been thrown");
+        } catch (CompileException e) {
+            Assert.assertEquals(10, e.getLineNumber());
+            Assert.assertEquals(35, e.getColumn());
+        }
+    }
+
+    @Test
+    public void testForeachWrongValueType() {
+        try {
+            createTestEngine().compile("<test data-eht-foreach='[\"test\" : \"test\"]'  />",
+                    createTestParserConfiguration()).render(new StringWriter(), new HashMap<String, Object>());
+
+            Assert.fail("Exception should have been thrown");
+        } catch (CompileException e) {
+            System.out.println(e.getMessage());
+            Assert.assertEquals(10, e.getLineNumber());
+            Assert.assertEquals(35, e.getColumn());
         }
     }
 
@@ -147,8 +211,7 @@ public class HTMLTemplatingTest {
         try {
             writer.flush();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
 
     }
@@ -202,5 +265,29 @@ public class HTMLTemplatingTest {
             Assert.assertEquals(12, e.getLineNumber());
         }
 
+    }
+
+    @Test
+    public void testRootFragmentId() {
+        try {
+            createTestEngine().compile("<test data-eht-fragment='root' />",
+                    createTestParserConfiguration());
+            Assert.fail("Exception should have been thrown");
+        } catch (CompileException e) {
+            Assert.assertEquals(10, e.getLineNumber());
+            Assert.assertEquals(36, e.getColumn());
+        }
+    }
+
+    @Test
+    public void testUnrecognizedAttribute() {
+        try {
+            createTestEngine().compile("<test data-eht-nothing='' />",
+                    createTestParserConfiguration());
+            Assert.fail("Exception should have been thrown");
+        } catch (CompileException e) {
+            Assert.assertEquals(10, e.getLineNumber());
+            Assert.assertEquals(17, e.getColumn());
+        }
     }
 }

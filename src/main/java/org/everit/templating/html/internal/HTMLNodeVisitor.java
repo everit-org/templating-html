@@ -27,8 +27,8 @@ import org.everit.expression.ExpressionCompiler;
 import org.everit.expression.ParserConfiguration;
 import org.everit.templating.CompiledTemplate;
 import org.everit.templating.TemplateCompiler;
+import org.everit.templating.html.internal.util.Coordinate;
 import org.everit.templating.html.internal.util.HTMLTemplatingUtil;
-import org.everit.templating.util.CompileException;
 import org.htmlparser.Attribute;
 import org.htmlparser.Node;
 import org.htmlparser.Remark;
@@ -44,24 +44,13 @@ public class HTMLNodeVisitor extends NodeVisitor {
 
     private static class InlineContext {
 
-        public Position position;
+        public Coordinate position;
 
         public TemplateCompiler templateCompiler;
 
-        public InlineContext(final TemplateCompiler templateCompiler, final Position position) {
+        public InlineContext(final TemplateCompiler templateCompiler, final Coordinate position) {
             this.templateCompiler = templateCompiler;
             this.position = position;
-        }
-    }
-
-    private static class Position {
-
-        public int column;
-        public int row;
-
-        public Position(final int row, final int column) {
-            this.row = row;
-            this.column = column;
         }
     }
 
@@ -72,9 +61,6 @@ public class HTMLNodeVisitor extends NodeVisitor {
     private static class VisitorPathElement {
 
         public ParentNode ewtNode;
-
-        // TODO store tagcontext with a char array about the tag so it will be only once in memory when expressions are
-        // compiled.
 
         public Tag tag;
 
@@ -115,9 +101,7 @@ public class HTMLNodeVisitor extends NodeVisitor {
 
     private int specialVisitDepth = 0;
 
-    private final int startColumn;
-
-    private final int startRow;
+    private final Coordinate startPosition;
 
     private VisitMode visitMode = VisitMode.NORMAL;
 
@@ -133,8 +117,8 @@ public class HTMLNodeVisitor extends NodeVisitor {
         this.expressionCompiler = expressionCompiler;
         visitorPath.add(new VisitorPathElement().withEwtNode(rootNode));
 
-        this.startRow = parserConfiguration.getStartRow();
-        this.startColumn = parserConfiguration.getStartColumn();
+        this.startPosition = new Coordinate(parserConfiguration.getStartRow(), parserConfiguration.getStartColumn());
+
     }
 
     private void appendCurrentSBAndClear() {
@@ -144,64 +128,63 @@ public class HTMLNodeVisitor extends NodeVisitor {
         }
     }
 
-    private Position calculatePosition(final Page page, final int cursor) {
-        int row = page.row(cursor);
-        int column = page.column(cursor) + (row == 0 ? startColumn : 1);
-        row = row + startRow;
-        return new Position(row, column);
-
-    }
-
-    private CompiledExpressionHolder compileExpression(final PageAttribute attribute) {
+    private CompiledExpressionHolder compileExpression(final PageAttribute attribute, final TagInfo tagInfo) {
         String attributeValue = attribute.getValue();
         attributeValue = HTMLTemplatingUtil.unescape(attributeValue);
 
         ParserConfiguration currentParserConfig = new ParserConfiguration(parserConfiguration);
-        // TODO
+
+        Coordinate position = HTMLTemplatingUtil.calculateCoordinate(
+                attribute.getPage(), attribute.getValueStartPosition(), startPosition);
+
+        currentParserConfig.setStartColumn(position.column);
+        currentParserConfig.setStartRow(position.row);
 
         return new CompiledExpressionHolder(expressionCompiler.compile(attributeValue, currentParserConfig),
-                attribute);
+                new AttributeInfo(attribute, tagInfo, startPosition));
 
     }
 
-    private void fillEwtTagNodeWithAttribute(final TagNode tagNode, final PageAttribute attribute,
+    private void fillEwtTagNodeWithAttribute(final Tag tag, final TagNode tagNode, final PageAttribute attribute,
             final String textBeforeAttribute) {
         String attributeName = attribute.getName();
         if (attributeName.startsWith(ewtAttributePrefix)) {
+            TagInfo tagInfo = new TagInfo(tag);
             String ewtAttributeName = attributeName.substring(ewtAttributePrefix.length());
             if (ewtAttributeName.equals("fragment")) {
-                rootNode.addBookmark(HTMLTemplatingUtil.unescape(attribute.getValue()), tagNode);
+                rootNode.addFragment(HTMLTemplatingUtil.unescape(attribute.getValue()), tagNode, attribute,
+                        startPosition, tag);
             } else if (ewtAttributeName.equals("foreach")) {
-                throwIfAttributeAlreadyDefined(attribute, tagNode.getForeachExpressionHolder(), tagNode);
-                tagNode.setForeachExpressionHolder(compileExpression(attribute));
+                throwIfAttributeAlreadyDefined(attribute, tagNode.getForeachExpressionHolder(), tag);
+                tagNode.setForeachExpressionHolder(compileExpression(attribute, tagInfo));
             } else if (ewtAttributeName.equals("var")) {
-                throwIfAttributeAlreadyDefined(attribute, tagNode.getVarExpressionHolder(), tagNode);
-                tagNode.setVarExpressionHolder(compileExpression(attribute));
+                throwIfAttributeAlreadyDefined(attribute, tagNode.getVarExpressionHolder(), tag);
+                tagNode.setVarExpressionHolder(compileExpression(attribute, tagInfo));
             } else if (ewtAttributeName.equals("render")) {
-                throwIfAttributeAlreadyDefined(attribute, tagNode.getRenderExpressionHolder(), tagNode);
-                tagNode.setRenderExpressionHolder(compileExpression(attribute));
+                throwIfAttributeAlreadyDefined(attribute, tagNode.getRenderExpressionHolder(), tag);
+                tagNode.setRenderExpressionHolder(compileExpression(attribute, tagInfo));
             } else if (ewtAttributeName.equals("text")) {
-                throwIfAttributeAlreadyDefined(attribute, tagNode.getTextExpressionHolder(), tagNode);
-                tagNode.setTextExpressionHolder(compileExpression(attribute));
+                throwIfAttributeAlreadyDefined(attribute, tagNode.getTextExpressionHolder(), tag);
+                tagNode.setTextExpressionHolder(compileExpression(attribute, tagInfo));
                 tagNode.setEscapeText(true);
             } else if (ewtAttributeName.equals("utext")) {
-                throwIfAttributeAlreadyDefined(attribute, tagNode.getTextExpressionHolder(), tagNode);
-                tagNode.setTextExpressionHolder(compileExpression(attribute));
+                throwIfAttributeAlreadyDefined(attribute, tagNode.getTextExpressionHolder(), tag);
+                tagNode.setTextExpressionHolder(compileExpression(attribute, tagInfo));
                 tagNode.setEscapeText(false);
             } else if (ewtAttributeName.equals("attr")) {
-                throwIfAttributeAlreadyDefined(attribute, tagNode.getAttributeMapExpressionHolder(), tagNode);
-                tagNode.setAttributeMapExpressionHolder(compileExpression(attribute));
+                throwIfAttributeAlreadyDefined(attribute, tagNode.getAttributeMapExpressionHolder(), tag);
+                tagNode.setAttributeMapExpressionHolder(compileExpression(attribute, tagInfo));
             } else if (ewtAttributeName.equals("attrprepend")) {
-                throwIfAttributeAlreadyDefined(attribute, tagNode.getAttributePrependMapExpressionHolder(), tagNode);
-                tagNode.setAttributePrependMapExpressionHolder(compileExpression(attribute));
+                throwIfAttributeAlreadyDefined(attribute, tagNode.getAttributePrependMapExpressionHolder(), tag);
+                tagNode.setAttributePrependMapExpressionHolder(compileExpression(attribute, tagInfo));
             } else if (ewtAttributeName.equals("attrappend")) {
-                throwIfAttributeAlreadyDefined(attribute, tagNode.getAttributeAppendMapExpressionHolder(), tagNode);
-                tagNode.setAttributeAppendMapExpressionHolder(compileExpression(attribute));
+                throwIfAttributeAlreadyDefined(attribute, tagNode.getAttributeAppendMapExpressionHolder(), tag);
+                tagNode.setAttributeAppendMapExpressionHolder(compileExpression(attribute, tagInfo));
             } else if (ewtAttributeName.startsWith("attr-")) {
                 String attrName = ewtAttributeName.substring("attr-".length());
                 RenderableAttribute renderableAttribute = getOrCreateRenderableAttribute(attrName, tagNode, attribute);
-                throwIfAttributeAlreadyDefined(attribute, renderableAttribute.getExpressionHolder(), tagNode);
-                renderableAttribute.setExpressionHolder(compileExpression(attribute));
+                throwIfAttributeAlreadyDefined(attribute, renderableAttribute.getExpressionHolder(), tag);
+                renderableAttribute.setExpressionHolder(compileExpression(attribute, tagInfo));
                 renderableAttribute.setExpressionPageAttribute(attribute);
                 if (renderableAttribute.getConstantValue() == null) {
                     renderableAttribute.setPreviousText(textBeforeAttribute);
@@ -209,8 +192,8 @@ public class HTMLNodeVisitor extends NodeVisitor {
             } else if (ewtAttributeName.startsWith("attrprepend-")) {
                 String attrName = ewtAttributeName.substring("attrprepend-".length());
                 RenderableAttribute renderableAttribute = getOrCreateRenderableAttribute(attrName, tagNode, attribute);
-                throwIfAttributeAlreadyDefined(attribute, renderableAttribute.getPrependExpressionHolder(), tagNode);
-                renderableAttribute.setPrependExpressionHolder(compileExpression(attribute));
+                throwIfAttributeAlreadyDefined(attribute, renderableAttribute.getPrependExpressionHolder(), tag);
+                renderableAttribute.setPrependExpressionHolder(compileExpression(attribute, tagInfo));
                 renderableAttribute.setPrependPageAttribute(attribute);
                 if (renderableAttribute.getExpressionHolder() == null
                         && renderableAttribute.getConstantValue() == null) {
@@ -219,27 +202,26 @@ public class HTMLNodeVisitor extends NodeVisitor {
             } else if (ewtAttributeName.startsWith("attrappend-")) {
                 String attrName = ewtAttributeName.substring("attrappend-".length());
                 RenderableAttribute renderableAttribute = getOrCreateRenderableAttribute(attrName, tagNode, attribute);
-                throwIfAttributeAlreadyDefined(attribute, renderableAttribute.getAppendExpressionHolder(), tagNode);
-                renderableAttribute.setAppendExpressionHolder(compileExpression(attribute));
+                throwIfAttributeAlreadyDefined(attribute, renderableAttribute.getAppendExpressionHolder(), tag);
+                renderableAttribute.setAppendExpressionHolder(compileExpression(attribute, tagInfo));
                 renderableAttribute.setAppendPageAttribute(attribute);
                 if (renderableAttribute.getPreviousText() == null) {
                     renderableAttribute.setPreviousText(textBeforeAttribute);
                 }
             } else if (!ewtAttributeName.equals("inline")) {
-                throw new RuntimeException(ewtAttributeName);
-                // TODO throw exception
+                HTMLTemplatingUtil.throwCompileExceptionForAttribute(
+                        "Unrecognized attribute name: " + attribute.getName(), tag, attribute, false, startPosition);
             }
         } else {
             RenderableAttribute renderableAttribute = getOrCreateRenderableAttribute(attributeName, tagNode, attribute);
             renderableAttribute.setPageAttribute(attribute);
             renderableAttribute.setPreviousText(textBeforeAttribute);
             if (renderableAttribute.getConstantValue() != null) {
-                throw new RuntimeException();
-                // TODO throw exception that tag is duplicated.
+                HTMLTemplatingUtil.throwCompileExceptionForAttribute(
+                        "Duplicate attribute: " + attribute.getName(), tag, attribute, false, startPosition);
             }
             renderableAttribute.setConstantValue(attribute.getValue());
         }
-
     }
 
     @Override
@@ -288,8 +270,8 @@ public class HTMLNodeVisitor extends NodeVisitor {
             TemplateCompiler inlineCompiler = inlineCompilers.get(inlineAttributeValue);
             if (inlineCompiler == null) {
                 Attribute inlineAttribute = tag.getAttributeEx(inlineAttributeName);
-                throwCompileExceptionForAttribute("No compiler found for inline type: " + inlineAttributeValue,
-                        tag, (PageAttribute) inlineAttribute);
+                HTMLTemplatingUtil.throwCompileExceptionForAttribute("No compiler found for inline type: "
+                        + inlineAttributeValue, tag, (PageAttribute) inlineAttribute, true, startPosition);
             }
             return inlineCompiler;
         }
@@ -297,34 +279,11 @@ public class HTMLNodeVisitor extends NodeVisitor {
         return null;
     }
 
-    private void throwCompileExceptionForAttribute(final String message, final Tag tag, final PageAttribute attribute) {
-        Page page = tag.getPage();
-        int tagStartPosition = tag.getStartPosition();
-        int tagEndPosition = tag.getEndPosition();
-
-        char[] expr = new char[tagEndPosition - tagStartPosition];
-        page.getText(expr, 0, tagStartPosition, tagEndPosition);
-
-        int positionInPage = tagStartPosition + 1;
-        int cursor = 1;
-        if (attribute != null) {
-            positionInPage = attribute.getValueStartPosition();
-            cursor = positionInPage - tagStartPosition;
-        }
-
-        CompileException e = new CompileException(message, expr, cursor);
-
-        Position position = calculatePosition(page, positionInPage);
-        e.setColumn(position.column);
-        e.setLineNumber(position.row);
-        throw e;
-
-    }
-
     private void throwIfAttributeAlreadyDefined(final PageAttribute attribute,
-            final CompiledExpressionHolder expression, final TagNode tagNode) {
+            final CompiledExpressionHolder expression, final Tag tag) {
         if (expression != null) {
-            throwCompileExceptionForAttribute("Attribute is defined more than once", tagNode.getTag(), attribute);
+            HTMLTemplatingUtil.throwCompileExceptionForAttribute("Attribute is defined more than once", tag, attribute,
+                    false, startPosition);
         }
     }
 
@@ -347,12 +306,12 @@ public class HTMLNodeVisitor extends NodeVisitor {
 
         if (visitMode == VisitMode.NONE) {
             int depth = visitorPath.size();
-            if (depth <= specialVisitDepth) {
+            if (depth < specialVisitDepth) {
                 visitMode = VisitMode.NORMAL;
             } else {
                 return;
             }
-            if (depth == specialVisitDepth) {
+            if (depth == specialVisitDepth - 1) {
                 return;
             }
         } else if (visitMode == VisitMode.INLINE) {
@@ -380,7 +339,7 @@ public class HTMLNodeVisitor extends NodeVisitor {
                 currentSB = new StringBuilder();
             }
 
-            ((TagNode) found.ewtNode).setEndTag(tag);
+            ((TagNode) found.ewtNode).setEndTag(tag.toHtml(true));
 
             boolean parentFound = false;
             while (!parentFound && iterator.hasPrevious()) {
@@ -479,7 +438,7 @@ public class HTMLNodeVisitor extends NodeVisitor {
                 if (attribute.getName() == null || attribute.getAssignment() == null || attribute.getValue() == null) {
                     attribute.toString(previousString);
                 } else {
-                    fillEwtTagNodeWithAttribute(tagNode, attribute, previousString.toString());
+                    fillEwtTagNodeWithAttribute(tag, tagNode, attribute, previousString.toString());
                     previousString = new StringBuffer();
                 }
             }
@@ -487,8 +446,8 @@ public class HTMLNodeVisitor extends NodeVisitor {
             TemplateCompiler inlineCompiler = resolveInlineCompiler(tag);
 
             if (inlineCompiler != null && tagNode.getTextExpressionHolder() != null) {
-                throwCompileExceptionForAttribute("Inline and text cannot be used together within the same tag", tag,
-                        null);
+                HTMLTemplatingUtil.throwCompileExceptionForAttribute(
+                        "Inline and text cannot be used together within the same tag", tag, null, false, startPosition);
             }
 
             parentNode.getChildren().add(tagNode);
@@ -502,10 +461,10 @@ public class HTMLNodeVisitor extends NodeVisitor {
                     Page page = tag.getPage();
 
                     int pageRow = page.row(tagEndPosition);
-                    int column = page.column(tagEndPosition) + (pageRow == 0 ? startColumn : 1) - 1;
-                    int row = startRow + pageRow;
+                    int column = page.column(tagEndPosition) + (pageRow == 0 ? startPosition.column : 1) - 1;
+                    int row = startPosition.row + pageRow;
 
-                    this.inlineContext = new InlineContext(inlineCompiler, new Position(row, column));
+                    this.inlineContext = new InlineContext(inlineCompiler, new Coordinate(row, column));
                     specialVisitDepth = visitorPath.size();
                 }
             }
