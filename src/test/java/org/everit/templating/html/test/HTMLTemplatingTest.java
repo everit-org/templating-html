@@ -22,15 +22,17 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.everit.expression.ParserConfiguration;
 import org.everit.expression.mvel.MvelExpressionCompiler;
 import org.everit.templating.CompiledTemplate;
 import org.everit.templating.TemplateCompiler;
+import org.everit.templating.TemplateContext;
 import org.everit.templating.html.HTMLTemplateCompiler;
 import org.everit.templating.text.TextTemplateCompiler;
 import org.everit.templating.util.CompileException;
@@ -77,6 +79,40 @@ public class HTMLTemplatingTest {
         return parserConfiguration;
     }
 
+    private void runFullInternal(final CompiledTemplate compiledTemplate, final Writer writer,
+            final HashMap<String, Object> vars, final int threadNum, final int cycle) {
+        final AtomicInteger processingThreads = new AtomicInteger(threadNum);
+
+        for (int i = 0; i < threadNum; i++) {
+            new Thread(new Runnable() {
+
+                @Override
+                public void run() {
+                    for (int j = 0; j < cycle; j++) {
+                        compiledTemplate.render(writer, vars);
+                    }
+                    int runningThreads = processingThreads.decrementAndGet();
+                    if (runningThreads == 0) {
+                        synchronized (processingThreads) {
+                            processingThreads.notify();
+                        }
+                    }
+                }
+            }).start();
+        }
+
+        synchronized (processingThreads) {
+            if (processingThreads.get() > 0) {
+                try {
+                    processingThreads.wait();
+                } catch (InterruptedException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
     @Test
     public void testBookmark() {
         TemplateCompiler engine = new HTMLTemplateCompiler(new MvelExpressionCompiler());
@@ -86,7 +122,7 @@ public class HTMLTemplatingTest {
         OutputStreamWriter writer = new OutputStreamWriter(System.out);
         HashMap<String, Object> vars = new HashMap<String, Object>();
 
-        List<User> users = new ArrayList<User>();
+        List<User> users = new LinkedList<User>();
         users.add(new User(0, "Niels", "Holgerson"));
         users.add(new User(1, "B", "Zs"));
 
@@ -186,27 +222,40 @@ public class HTMLTemplatingTest {
 
         TemplateCompiler engine = new HTMLTemplateCompiler(expressionCompiler, inlineCompilers);
 
-        CompiledTemplate compiledTemplate = engine.compile(readTemplate("META-INF/test1.html"),
-                new ParserConfiguration(this.getClass().getClassLoader()));
+        ParserConfiguration parserConfiguration = new ParserConfiguration(this.getClass().getClassLoader());
+        Map<String, Class<?>> variableTypes = new HashMap<String, Class<?>>();
+        variableTypes.put("users", List.class);
+        variableTypes.put("user", User.class);
+        variableTypes.put("rowId", Integer.class);
+        variableTypes.put("hello_world", String.class);
+        variableTypes.put("template_ctx", TemplateContext.class);
+
+        parserConfiguration.setVariableTypes(variableTypes);
+        final CompiledTemplate compiledTemplate = engine.compile(readTemplate("META-INF/test1.html"),
+                parserConfiguration);
         // Writer writer = new OutputStreamWriter(System.out);
-        Writer writer = new NullWriter();
+        final Writer writer = new NullWriter();
 
-        HashMap<String, Object> vars = new HashMap<String, Object>();
+        final HashMap<String, Object> vars = new HashMap<String, Object>();
 
-        List<User> users = new ArrayList<User>();
+        List<User> users = new LinkedList<User>();
         users.add(new User(0, "Niels", "Holgerson"));
         users.add(new User(1, "B", "Zs"));
 
         vars.put("users", users);
 
+        runFullInternal(compiledTemplate, writer, vars, 1, 20000);
+
+        final int threadNum = 2;
+        final int cycle = 50000;
+
         long startTime = System.nanoTime();
-        int n = 200000;
-        for (int i = 0; i < n; i++) {
-            compiledTemplate.render(writer, vars);
-        }
+
+        runFullInternal(compiledTemplate, writer, vars, threadNum, cycle);
+
         long endTime = System.nanoTime();
         System.out.println("Time: " + ((endTime - startTime) / 1000000) + "ms, "
-                + ((double) n * 1000000 / (endTime - startTime)) + " db/ms");
+                + ((double) cycle * threadNum * 1000000 / (endTime - startTime)) + " db/ms");
 
         try {
             writer.flush();

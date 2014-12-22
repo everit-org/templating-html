@@ -16,12 +16,12 @@
  */
 package org.everit.templating.html.internal;
 
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 public abstract class ParentNode implements HTMLNode {
 
-    private final List<HTMLNode> children = new ArrayList<HTMLNode>();
+    private final List<HTMLNode> children = new LinkedList<HTMLNode>();
 
     public List<HTMLNode> getChildren() {
         return children;

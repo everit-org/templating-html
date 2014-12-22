@@ -57,6 +57,8 @@
   
   <p class="font-weight: normal;" data-eht-attr-class="'font-weight: bold;'" data-eht-attr="['class' : 'font-weight: italic;']">This text should be italic as class is replaced with both attr map and attr-*.</p>
   
+  <p id="shouldNotAppear" data-eht-attr-id="null"></p>
+  
   <!-- Attribute prepending and appending -->
   
   <p class="font-weight: normal;" data-eht-attr="['class' : 'font-weight: bold;']" data-eht-attrprepend="['class' : 'font-size: 2em; ']" data-eht-attrappend="['class' : ' color: red;']">This red text should be large and bold as class is replaced, appended and prepended.</p>
@@ -72,7 +74,7 @@
   <!-- Test variable creation -->
   
   <p data-eht-var="['hello_world' : 'Hello world']" data-eht-text="hello_world" />
-  <p data-eht-var="['hello_world' : 'Hello world']" data-eht-text="hello_world + ' again'" />
+  <p data-eht-var="['hello_world' : hello_world + 'again']" data-eht-text="hello_world" />
   
   <!-- Test render -->
   <p data-eht-render="'all'">Should be rendered</p>
@@ -84,34 +86,45 @@
   <p data-eht-render="'none'"><span>Never appears</p>
   <p data-eht-render="'none'">Never appears</p>
 
-  <table id='fddd' data-eht-fragment="fragment1" data-eht-attr="['id' : 'myTable']" data-eht-render="'all'">
+  <!-- Test foreach -->
+
+  <table>
     <tr data-eht-foreach="[({'user'}) : users]"
         data-eht-var="['rowId' : user.userId]"
         data-eht-attr="['id' : user]">
       <td><span data-eht-text="user.firstName">John</span></td>
-      <td><span data-eht-utext="user.lastName">Doe</span></td>
-      <td><div data-eht-text="'someText'" /></td>
-      <td id="shouldNotAppear" data-eht-attr-id="null">
-        
-      </td>
+      <td><span data-eht-text="user.lastName">Doe</span></td>
     </tr>
-    <tr data-eht-render="'none'" data-eht-var="fdf99-)_*()">
-      <td><span style="color: red;">fff<a href="aaa"><span>
+    <tr data-eht-render="'none'">
+      <td><span>Foo</span></td>
+      <td><span>Bar</span></td>
+    </tr>
   </table>
+  
+  <!-- Testing code in remark -->
+  
   <!--[if IE 8]>
-<p>Welcome to Internet Explorer 8.</p>
-<![endif]-->
+    <p data-eht-attr-class="font-weight: bold;">Welcome to Internet Explorer 8.</p>
+  <![endif]-->
 
-  <div id="fragment2" data-eht-fragment="fragment2" data-eht-render="(template_ctx.fragmentId == 'fragment2') ? 'all' : 'none'">
-    Hello fragment world!
+  <!-- Testing Fragment -->
+
+  <div id="fragment1" data-eht-fragment="fragment1" data-eht-render="(template_ctx.fragmentId == 'fragment1') ? 'all' : 'none'">
+    Hello <span data-eht-text="(isdef param1) ? param1 : 'fragment'" ></span> world!
   </div>
-  <div>Fragment world will be next</div>
-  <div data-eht-utext="template_ctx.renderFragment('fragment2')" data-eht-render="'content'">
+
+  <div>Fragment will appear</div>
+  
+  <div data-eht-utext="template_ctx.renderFragment('fragment1')" data-eht-render="'content'">
+    This will be replaced.
+  </div>
+  
+  <div data-eht-utext="template_ctx.renderFragment('fragment1', (['param1' : 'EHT']))" data-eht-render="'content'">
     This will be replaced.
   </div>
 
   <script type="text/ewt-javascript" data-eht-inline="text" data-eht-attr="['type' : 'text/javascript']">
-    var myVariable = @{users.size()};
+    var sizeOfUsers = @{users.size()};
   </script>
   
   

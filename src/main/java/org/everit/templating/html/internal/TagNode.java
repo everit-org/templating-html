@@ -27,7 +27,6 @@ import java.util.Set;
 import org.everit.expression.CompiledExpression;
 import org.everit.templating.html.internal.util.HTMLTemplatingUtil;
 import org.everit.templating.html.internal.util.UniversalIterable;
-import org.everit.templating.util.Supplier;
 import org.everit.templating.util.TemplateWriter;
 import org.htmlparser.Tag;
 import org.htmlparser.lexer.Page;
@@ -292,14 +291,7 @@ public class TagNode extends ParentNode {
         }
 
         if (foreachMap != null) {
-            templateContext.runInBlock(new Supplier<Object>() {
-
-                @Override
-                public Object get() {
-                    renderEach(templateContext, foreachMap);
-                    return null;
-                }
-            });
+            renderEach(templateContext, foreachMap);
         } else {
             renderItem(templateContext);
         }
@@ -474,15 +466,8 @@ public class TagNode extends ParentNode {
         final Map<String, Object> tagVars = evaluateTagVariables(templateContext);
 
         if (tagVars != null && tagVars.size() > 0) {
-            templateContext.runInBlock(new Supplier<Object>() {
-
-                @Override
-                public Object get() {
-                    templateContext.getVars().putAll(tagVars);
-                    renderContent(templateContext);
-                    return null;
-                }
-            });
+            templateContext.getVars().putAll(tagVars);
+            renderContent(templateContext);
         } else {
             renderContent(templateContext);
         }

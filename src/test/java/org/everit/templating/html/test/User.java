@@ -18,11 +18,11 @@ package org.everit.templating.html.test;
 
 public class User {
 
-    public String firstName;
+    public final String firstName;
 
-    public String lastName;
+    public final String lastName;
 
-    public int userId;
+    public final int userId;
 
     public User(final int userId, final String firstName, final String lastName) {
         this.firstName = firstName;
