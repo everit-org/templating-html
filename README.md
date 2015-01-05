@@ -269,7 +269,7 @@ rules than HTML.
 
 ### Works with unclosed elements
 
-In XMLs all tags must be closed. However, in HTML the same rules are not
+In XML all tags must be closed. However, in HTML the same rules are not
 applied, it is possible to use a tag without closing it. E.g.:
 
     <div><span>MyText</div>
