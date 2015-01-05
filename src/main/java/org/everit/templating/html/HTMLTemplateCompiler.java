@@ -38,49 +38,72 @@ import org.htmlparser.util.ParserException;
  */
 public class HTMLTemplateCompiler implements TemplateCompiler {
 
+    /**
+     * Default prefix for HTML templating attributes.
+     */
     public static final String DEFAULT_ATTRIBUTE_PREFIX = "data-eht-";
 
     /**
      * The prefix of the Web Templating attributes. By default it is "data-ewt-".
      */
-    private final String ewtAttributeprefix;
+    private final String ehtAttributeprefix;
 
     /**
      * The compiler for expressions.
      */
     private final ExpressionCompiler expressionCompiler;
 
+    /**
+     * Map of inline compilers that can be used as part of the HTML template.
+     */
     private final Map<String, TemplateCompiler> inlineCompilers;
 
     /**
-     * Creates a new TemplateCompiler with the "data-ewt-" default attribute prefix.
+     * Creates a new TemplateCompiler with the {@value #DEFAULT_ATTRIBUTE_PREFIX} default attribute prefix.
      *
      * @param expressionCompiler
-     *            The compiler of expressions.
+     *            The compiler for expressions.
      */
     public HTMLTemplateCompiler(final ExpressionCompiler expressionCompiler) {
         this(DEFAULT_ATTRIBUTE_PREFIX, expressionCompiler, new HashMap<String, TemplateCompiler>());
     }
 
+    /**
+     * Creates a new TemplateCompiler with the {@value #DEFAULT_ATTRIBUTE_PREFIX} default attribute prefix.
+     *
+     * @param expressionCompiler
+     *            The compiler for expressions.
+     * @param inlineCompilers
+     *            Inline compilers can be used to put fragments into the HTML template with different syntax. E.g.: A
+     *            Javascript should be templated with different syntax.
+     */
     public HTMLTemplateCompiler(final ExpressionCompiler expressionCompiler,
             final Map<String, TemplateCompiler> inlineCompilers) {
         this(DEFAULT_ATTRIBUTE_PREFIX, expressionCompiler, inlineCompilers);
     }
 
     /**
-     * Creates a new template compiler.
+     * Creates a new TemplateCompiler with the {@value #DEFAULT_ATTRIBUTE_PREFIX} default attribute prefix.
      *
-     * @param ewtAttributeprefix
-     *            The prefix of ewt attributes. Dynamic attributes (each, bookmark, ...) will be searched with this
-     *            prefix.
      * @param expressionCompiler
-     *            The compiler of the expressions.
+     *            The compiler for expressions.
+     * @param inlineCompilers
+     *            Inline compilers can be used to put fragments into the HTML template with different syntax. E.g.: A
+     *            Javascript should be templated with different syntax.
+     * @param ehtAttributeprefix
+     *            The prefix of the attributes of HTML templating.
      */
-    public HTMLTemplateCompiler(final String ewtAttributeprefix, final ExpressionCompiler expressionCompiler,
+    public HTMLTemplateCompiler(final String ehtAttributeprefix, final ExpressionCompiler expressionCompiler,
             final Map<String, TemplateCompiler> inlineCompilers) {
-        this.ewtAttributeprefix = ewtAttributeprefix;
+        this.ehtAttributeprefix = ehtAttributeprefix;
         this.expressionCompiler = expressionCompiler;
         this.inlineCompilers = new HashMap<String, TemplateCompiler>(inlineCompilers);
+    }
+
+    @Override
+    public CompiledTemplate compile(final char[] document, final int templateStart, final int templateLength,
+            final ParserConfiguration parserConfiguration) {
+        return compile(String.valueOf(document, templateStart, templateLength), parserConfiguration);
     }
 
     @Override
@@ -88,7 +111,7 @@ public class HTMLTemplateCompiler implements TemplateCompiler {
         Source source = new StringSource(template);
         Page page = new Page(source);
         Lexer lexer = new Lexer(page);
-        HTMLNodeVisitor visitor = new HTMLNodeVisitor(ewtAttributeprefix, expressionCompiler, inlineCompilers,
+        HTMLNodeVisitor visitor = new HTMLNodeVisitor(ehtAttributeprefix, expressionCompiler, inlineCompilers,
                 parserConfiguration);
         visitor.beginParsing();
         try {
@@ -96,8 +119,7 @@ public class HTMLTemplateCompiler implements TemplateCompiler {
                 node.accept(visitor);
             }
         } catch (ParserException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
         visitor.finishedParsing();
         return new CompiledTemplateImpl(visitor.getRootNode());

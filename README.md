@@ -7,45 +7,231 @@ Everit Web Templating can be used to render web pages based on HTML
 templates. The library can also be used to generate XMLs as XML syntax
 is compatible with HTML.
 
+The goals of the templating engine are:
+
+ - Be extremely fast
+ - Have a very small binary and memory footprint
+ - Do not do more just HTML templating
+ - Allow the programmers to use the code created by web designers as it
+   is delivered. Only decoration should with templating specific attributes
+   should be done, so the web designer can continue working on the code.
+
+## Usage
+
+    // Get a template from somewhere (e.g.: from a file)
+    String text = "<span data-eht-text='name' />";
+
+    // Instantiate any expression compiler (e.g.: MVEL)
+    ExpressionCompiler expressionCompiler = new MvelExpressionCompiler();
+
+    // Instantiate template compiler and pass the expression compiler
+    HTMLTemplateCompiler compiler = new HTMLTemplateCompiler(expressionCompiler);
+
+    // Get a classloader that can be used to compile the template if necessary
+    ClassLoader cl = this.getClass().getClassLoader();
+
+    // Instantiate a ParserConfiguration
+    ParserConfiguration configuration = new ParserConfiguration(cl);
+
+    // Compile the template
+    CompiledTemplate template = compiler.compile(text, configuration);
+
+    /////////////////////////////////////////////////////////////////////////
+    // Rendering the template
+    /////////////////////////////////////////////////////////////////////////
+
+    // Create a map for the variables that can be used within the template
+    Map<String, Object> vars = new HashMap<>();
+    vars.put("name", "John Doe");
+
+    // Get a Writer from somewhere (e.g.: a ResponseWriter or a StringWriter
+    Writer writer = new StringWriter();
+
+    // Render the template to the writer
+    template.render(writer, vars);
+
+    // In this example we write out the result to the standard output
+    System.out.println(writer.toString());
+
 ## Attributes
 
-### bookmark
+### foreach
 
-### each
+Iterates through the elements of an Iterable element, Object array or
+primitive array. The value of the attribute must be a Map where the key
+is the name of the variable that holds the element of the iteration, the
+value holds the collection that is iterated. Example based on MVEL:
+
+    <table>
+      <tr data-eht-foreach="['user' : users]">
+        <td data-eht-text="user.firstName">John</td>
+        <td data-eht-text="user.lastName">Doe</td>
+      </tr>
+    </table>
+
+An array of two Strings can be defined as the key of the Map. In that case the
+first element of the array will show the name of the variable of the element,
+while the second String will be the name of the index variable. Example
+based on MVEL expressions:
+
+    <table>
+      <tr data-eht-foreach="[({'user', 'index'}) : users]">
+        <td data-eht-text="index + 1">1</td>
+        <td data-eht-text="user.firstName">John</td>
+        <td data-eht-text="user.lastName">Doe</td>
+      </tr>
+    </table>
+
+Multi foreach is also supported when the Map has more entries. Use this
+only if you are sure that the Map keeps its insertion order, otherwise
+the output might be "randomized".
 
 ### var
 
+Declares / assignes one or more variables. The value of the attribute
+must be a Map, where the keys of the Map are the name of the variables
+and the values of the Map are the values of the variables. Example based
+on MVEL:
+
+    <div data-eht-var="['firstName' : user.firstName, 'lastName' : user.lastName]">
+        ...
+    </div>
+
 ### render
 
-all, body, tag, none; e.g.: ewt-render="(ewt_directAccess) ? 'body' : 'none'"
+A case-insensitive String value that tells which parts of the element
+should be rendered:
+
+ - __all__: The element and its body is rendered. This is the default.
+ - __content__: Only the body of the element is rendered, the element itself
+   will not be part of the output
+ - __tag__: Only the element itself is rendered, its content is not
+ - __none__: The element is not rendered at all
+
+The value of the _render_ attribute can be defined dynamically:
+
+    <span data-eht-render="user.firstName == 'John' ? 'all' : 'none'">...</span>
+
+In case _none_ is specified as a constant, the parsing of the element and
+its content is skipped completely. This is useful if we want to comment
+something out from the template in the way that it is not processed:
+
+    <span data-eht-render="'none'">...</span>
 
 ###text
 
-Alternative content for the tag
+Replaces the content of the element with the result of the evaluation of the
+value of the attribute. The text will be escaped.
+
+    <td data-eht-text="user.firstName">John</td>
 
 ### utext
 
-Unescaped alternative content for the tag.
+Same as text, but the text will not be escaped.
 
 ### attr
 
-Map, attribute values
+A Map of attribute overrides.
+
+    <div id="testId" data-eht-attr="['id' : 'runtimeId', 'class' : 'someClass']" />
+
+The output of the template above will be the following:
+
+    <div id="runtimeId" class="someClass" />
 
 ### attr-*
 
-Value of an attribute
+It possible to override the value of any attribute by defining a new value.
+
+    <span id="testId" data-eht-attr-id="'runtimeId'" />
 
 ### attrprepend
 
+Prepends the value of one or more attributes. A Map should be provided where
+the keys are the name of the attributes and the values of the Map are the new
+values.
+
+    <div class="class2" data-eht-attrprepend="['runtimeId' : 'runtime', 'class' : 'class1 ']" />
+
+The output of the template above will be the following:
+
+    <div class="class1 class2" id="runtimeId" />
+
 ### attrprepend-*
+
+As with _attr-*_, it is possible to prepend attributes. A String should
+be provided!
+
+    <div id="Id" data-eht-attrprepend-id="'runtime'" />
+
+The output of the template above will be the following:
+
+    <div id="runtimeId" /> 
 
 ### attrappend
 
+Same as _attrPrepend_, but it appends the newly defined values to the end
+of the original attributes.
+
 ### attrappend-*
 
-### parsebody: default false
+Same as _attrprepend-*_, but it appends the newly defined value to the end
+of the original attribute.
 
-## Usage
+### inline:
+
+It is possible to mix the syntax of the template with other template syntaxes.
+This is useful if some other format should be embedded whithin a template,
+e.g.: a javascript.
+
+Inline template compilers must be defined during the initialization of the
+HTML template compiler.
+
+    // Instantiate any expression compiler (e.g.: MVEL)
+    ExpressionCompiler expressionCompiler = new MvelExpressionCompiler();
+    
+    // Create the inline compilers and put them into a Map
+    TemplateCompiler textCompiler = new TextTemplateCompiler(expressionCompiler);
+    
+    Map<String, TemplateCompiler> inlineCompilers = new HashMap<>();
+    inlineCompilers.put("text", textCompiler);
+
+    // Instantiate template compiler and pass the expression compiler
+    HTMLTemplateCompiler compiler = new HTMLTemplateCompiler(expressionCompiler);
+
+    // Compile and render the template...
+
+In the example above one inline compiler was defined with the _text_
+identifier. In the template the same identifier should be used within
+the _fragment_ attribute as a constant String.
+
+    <script type="text/javascript" data-eht-inline="'text'">
+      var firstName = @{user.firstName};
+    </script>
+
+### fragment
+
+It is possible to define fragments that can be rendered separately, too.
+
+    <div data-eht-fragment="'myFragment'">
+      This is the content of the fragment
+    </div>
+
+The fragment can be rendered programmatically:
+
+    template.render(writer, vars, "myFragment");
+
+It is also possible to render a fragment from any place of the template
+that defined it:
+
+    <div data-eht-utext="template_ctx.renderFragment('myFragment')" />
+
+Let's say that a fragment should be rendered only if it is called:
+
+    <div data-eht-fragment="'myFragment'"
+         data-eht-render="template_ctx.fragmentId == 'myFragment'">
+      This is the content of the fragment
+    </div>
 
 ## Specialties
 
@@ -65,4 +251,8 @@ applied, it is possible to use a tag without closing it. E.g.:
 
 ### Extremely fast
 
-7-10x faster than concurrent templating engines (e.g.: Thymeleaf).
+Everit HTML templating is often 7-10x faster than concurrent templating
+engines.
+
+Exact benchmarks will come later, but if you are unpatient, you can run
+one by yourself and share it on the wiki page.

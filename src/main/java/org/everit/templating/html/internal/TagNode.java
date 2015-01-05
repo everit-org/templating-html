@@ -26,8 +26,8 @@ import java.util.Set;
 
 import org.everit.expression.CompiledExpression;
 import org.everit.templating.html.internal.util.HTMLTemplatingUtil;
-import org.everit.templating.html.internal.util.UniversalIterable;
 import org.everit.templating.util.TemplateWriter;
+import org.everit.templating.util.UniversalIterable;
 import org.htmlparser.Tag;
 import org.htmlparser.lexer.Page;
 import org.htmlparser.lexer.PageAttribute;

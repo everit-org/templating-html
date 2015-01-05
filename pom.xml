@@ -89,7 +89,7 @@
             <Export-Package>
               org.everit.templating.html
             </Export-Package>
-            <Import-Package>org.everit.templating;version="[1,2)",*</Import-Package>
+            <Import-Package>org.everit.templating;version="[1.0,2)",*</Import-Package>
           </instructions>
         </configuration>
       </plugin>
@@ -117,24 +117,24 @@
     <dependency>
       <groupId>org.everit.templating</groupId>
       <artifactId>org.everit.templating.api</artifactId>
-      <version>1.0.0-SNAPSHOT</version>
+      <version>1.0.0</version>
     </dependency>
     <dependency>
       <groupId>org.everit.templating</groupId>
       <artifactId>org.everit.templating.util</artifactId>
-      <version>1.0.0-SNAPSHOT</version>
+      <version>1.0.0</version>
     </dependency>
     
     <dependency>
       <groupId>org.everit.templating</groupId>
       <artifactId>org.everit.templating.text</artifactId>
-      <version>1.0.0-SNAPSHOT</version>
+      <version>1.0.0</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.everit.expression</groupId>
       <artifactId>org.everit.expression.mvel</artifactId>
-      <version>1.0.0-SNAPSHOT</version>
+      <version>1.0.0</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

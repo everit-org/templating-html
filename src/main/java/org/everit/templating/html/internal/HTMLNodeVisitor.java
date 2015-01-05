@@ -16,6 +16,7 @@
  */
 package org.everit.templating.html.internal;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -23,13 +24,13 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Vector;
 
+import org.everit.expression.CompiledExpression;
 import org.everit.expression.ExpressionCompiler;
 import org.everit.expression.ParserConfiguration;
 import org.everit.templating.CompiledTemplate;
 import org.everit.templating.TemplateCompiler;
 import org.everit.templating.html.internal.util.Coordinate;
 import org.everit.templating.html.internal.util.HTMLTemplatingUtil;
-import org.htmlparser.Attribute;
 import org.htmlparser.Node;
 import org.htmlparser.Remark;
 import org.htmlparser.Tag;
@@ -101,7 +102,7 @@ public class HTMLNodeVisitor extends NodeVisitor {
 
     private int specialVisitDepth = 0;
 
-    private final Coordinate startPosition;
+    private Coordinate startPosition;
 
     private VisitMode visitMode = VisitMode.NORMAL;
 
@@ -152,7 +153,15 @@ public class HTMLNodeVisitor extends NodeVisitor {
             TagInfo tagInfo = new TagInfo(tag);
             String ewtAttributeName = attributeName.substring(ewtAttributePrefix.length());
             if (ewtAttributeName.equals("fragment")) {
-                rootNode.addFragment(HTMLTemplatingUtil.unescape(attribute.getValue()), tagNode, attribute,
+                CompiledExpressionHolder compileExpression = compileExpression(attribute, tagInfo);
+                Object fragmentNameObj = compileExpression.compiledExpression.eval(new HashMap<String, Object>());
+
+                if (fragmentNameObj == null) {
+                    HTMLTemplatingUtil.throwCompileExceptionForAttribute("Null value defined as fragmentId", tag,
+                            attribute, false, startPosition);
+                }
+
+                rootNode.addFragment(String.valueOf(fragmentNameObj), tagNode, attribute,
                         startPosition, tag);
             } else if (ewtAttributeName.equals("foreach")) {
                 throwIfAttributeAlreadyDefined(attribute, tagNode.getForeachExpressionHolder(), tag);
@@ -264,16 +273,22 @@ public class HTMLNodeVisitor extends NodeVisitor {
 
     private TemplateCompiler resolveInlineCompiler(final Tag tag) {
         String inlineAttributeName = ewtAttributePrefix + "inline";
-        String inlineAttributeValue = tag.getAttribute(inlineAttributeName);
+        PageAttribute inlineAttribute = (PageAttribute) tag.getAttributeEx(inlineAttributeName);
 
-        if (inlineAttributeValue != null) {
-            TemplateCompiler inlineCompiler = inlineCompilers.get(inlineAttributeValue);
-            if (inlineCompiler == null) {
-                Attribute inlineAttribute = tag.getAttributeEx(inlineAttributeName);
-                HTMLTemplatingUtil.throwCompileExceptionForAttribute("No compiler found for inline type: "
-                        + inlineAttributeValue, tag, (PageAttribute) inlineAttribute, true, startPosition);
+        if (inlineAttribute != null) {
+            CompiledExpression compiledExpression =
+                    compileExpression(inlineAttribute, new TagInfo(tag)).compiledExpression;
+            Object evaluatedInline = compiledExpression.eval(new HashMap<String, Object>());
+
+            if (evaluatedInline != null) {
+                TemplateCompiler inlineCompiler = inlineCompilers.get(evaluatedInline);
+                if (inlineCompiler == null) {
+                    HTMLTemplatingUtil.throwCompileExceptionForAttribute("No compiler found for inline type: "
+                            + evaluatedInline, tag, inlineAttribute, true, startPosition);
+                }
+                return inlineCompiler;
             }
-            return inlineCompiler;
+
         }
 
         return null;
@@ -363,7 +378,9 @@ public class HTMLNodeVisitor extends NodeVisitor {
             return;
         }
 
-        currentSB.append("<!--");
+        String remarkOpenTag = "<!--";
+        int remarkOpenTagLength = remarkOpenTag.length();
+        currentSB.append(remarkOpenTag);
         String remarkText = remark.getText();
         Lexer lexer = new Lexer(remarkText);
         // lexer.setPosition(remark.getStartPosition() + 4);
@@ -371,9 +388,13 @@ public class HTMLNodeVisitor extends NodeVisitor {
         LinkedList<VisitorPathElement> previousVisitorPath = visitorPath;
         ParentNode previousParent = parentNode;
 
-        visitorPath = new LinkedList<VisitorPathElement>();
-        visitorPath.add(previousVisitorPath.getFirst());
+        Coordinate previousStartPosition = startPosition;
+        startPosition = HTMLTemplatingUtil.calculateCoordinate(remark.getPage(), remark.getStartPosition()
+                + remarkOpenTagLength, previousStartPosition);
         parentNode = new RootNode();
+        visitorPath = new LinkedList<VisitorPathElement>();
+        visitorPath.add(new VisitorPathElement().withEwtNode(parentNode));
+
         try {
             for (Node node = lexer.nextNode(); node != null; node = lexer.nextNode()) {
                 node.accept(this);
@@ -385,6 +406,7 @@ public class HTMLNodeVisitor extends NodeVisitor {
         List<HTMLNode> remarkNodes = parentNode.getChildren();
         parentNode = previousParent;
         parentNode.getChildren().addAll(remarkNodes);
+        startPosition = previousStartPosition;
 
         currentSB.append("-->");
     }

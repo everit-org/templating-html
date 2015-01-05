@@ -115,7 +115,7 @@ public class HTMLTemplatingTest {
 
     @Test
     public void testBookmark() {
-        TemplateCompiler engine = new HTMLTemplateCompiler(new MvelExpressionCompiler());
+        TemplateCompiler engine = createTestEngine();
 
         CompiledTemplate compiledTemplate = engine.compile(readTemplate("META-INF/test1.html"),
                 new ParserConfiguration(this.getClass().getClassLoader()));
@@ -207,7 +207,6 @@ public class HTMLTemplatingTest {
 
             Assert.fail("Exception should have been thrown");
         } catch (CompileException e) {
-            System.out.println(e.getMessage());
             Assert.assertEquals(10, e.getLineNumber());
             Assert.assertEquals(35, e.getColumn());
         }
@@ -246,8 +245,8 @@ public class HTMLTemplatingTest {
 
         runFullInternal(compiledTemplate, writer, vars, 1, 20000);
 
-        final int threadNum = 2;
-        final int cycle = 50000;
+        final int threadNum = 1;
+        final int cycle = 20000;
 
         long startTime = System.nanoTime();
 
@@ -268,7 +267,7 @@ public class HTMLTemplatingTest {
     @Test
     public void testInlineAndTextTogether() {
         try {
-            createTestEngine().compile("<test data-eht-inline='text' data-eht-text=\"'someText'\" />",
+            createTestEngine().compile("<test data-eht-inline='\"text\"' data-eht-text=\"'someText'\" />",
                     createTestParserConfiguration());
             Assert.fail("Should throw an exception");
         } catch (CompileException e) {
@@ -283,7 +282,7 @@ public class HTMLTemplatingTest {
 
         ParserConfiguration parserConfiguration = createTestParserConfiguration();
         try {
-            engine.compile("<test data-eht-inline='noSuchInline'></test>", parserConfiguration);
+            engine.compile("<test data-eht-inline=\"'noSuchInline'\"></test>", parserConfiguration);
             Assert.fail("Should throw an exception");
         } catch (CompileException e) {
             Assert.assertEquals(34, e.getColumn());
@@ -291,7 +290,7 @@ public class HTMLTemplatingTest {
         }
 
         try {
-            engine.compile("\n<test data-eht-inline='noSuchInline'></test>", parserConfiguration);
+            engine.compile("\n<test data-eht-inline=\"'noSuchInline'\"></test>", parserConfiguration);
             Assert.fail("Should throw an exception");
         } catch (CompileException e) {
             Assert.assertEquals(24, e.getColumn());
@@ -299,15 +298,15 @@ public class HTMLTemplatingTest {
         }
 
         try {
-            engine.compile("\n<test data-eht-inline='text'>@{[[][}</test>", parserConfiguration);
+            engine.compile("\n<test data-eht-inline=\"'text'\">@{[[][}</test>", parserConfiguration);
             Assert.fail("Should throw an exception");
         } catch (org.mvel2.CompileException e) {
-            Assert.assertEquals(32, e.getColumn());
+            Assert.assertEquals(34, e.getColumn());
             Assert.assertEquals(11, e.getLineNumber());
         }
 
         try {
-            engine.compile("\n<test data-eht-inline='text'>\n@{[[][}</test>", parserConfiguration);
+            engine.compile("\n<test data-eht-inline=\"'text'\">\n@{[[][}</test>", parserConfiguration);
             Assert.fail("Should throw an exception");
         } catch (org.mvel2.CompileException e) {
             Assert.assertEquals(3, e.getColumn());

@@ -36,7 +36,7 @@
 <head />
 <body>
 
-  <!-- Escaped text -->\
+  <!-- Escaped text -->
   <p data-eht-text="'Hello world!'">This text should be replaced with Hello world!</p>
 
   <!-- Unescaped text -->
@@ -104,12 +104,12 @@
   <!-- Testing code in remark -->
   
   <!--[if IE 8]>
-    <p data-eht-attr-class="font-weight: bold;">Welcome to Internet Explorer 8.</p>
+    <p data-eht-attr-class="'font-weight: bold;'">Welcome to Internet Explorer 8.</p>
   <![endif]-->
 
   <!-- Testing Fragment -->
 
-  <div id="fragment1" data-eht-fragment="fragment1" data-eht-render="(template_ctx.fragmentId == 'fragment1') ? 'all' : 'none'">
+  <div id="fragment1" data-eht-fragment="'fragment1'" data-eht-render="(template_ctx.fragmentId == 'fragment1') ? 'all' : 'none'">
     Hello <span data-eht-text="(isdef param1) ? param1 : 'fragment'" ></span> world!
   </div>
 
@@ -123,11 +123,10 @@
     This will be replaced.
   </div>
 
-  <script type="text/ewt-javascript" data-eht-inline="text" data-eht-attr="['type' : 'text/javascript']">
+  <script type="text/ewt-javascript" data-eht-inline="'text'" data-eht-attr="['type' : 'text/javascript']">
     var sizeOfUsers = @{users.size()};
   </script>
-  
-  
+
 </body>
 </html>
 <!-- 
