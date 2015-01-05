@@ -11,7 +11,7 @@ The goals of the templating engine are:
 
  - Be extremely fast
  - Have a very small binary and memory footprint
- - Do not do more just HTML templating
+ - Do not do more just HTML templating (No MVC, URL resolving, etc.)
  - Allow the programmers to use the code created by web designers as it
    is delivered. Only decoration should with templating specific attributes
    should be done, so the web designer can continue working on the code.
@@ -252,7 +252,9 @@ applied, it is possible to use a tag without closing it. E.g.:
 ### Extremely fast
 
 Everit HTML templating is often 7-10x faster than concurrent templating
-engines.
+engines. The test1.html template that is located in the src/main/resources
+folder, can be rendered more than 30 times in a millisec on a Core i5
+CPU.
 
 Exact benchmarks will come later, but if you are unpatient, you can run
 one by yourself and share it on the wiki page.

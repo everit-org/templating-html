@@ -170,7 +170,7 @@ public class HTMLTemplatingTest {
             Assert.fail("Exception should have been thrown");
         } catch (CompileException e) {
             Assert.assertEquals(10, e.getLineNumber());
-            Assert.assertEquals(75, e.getColumn());
+            Assert.assertEquals(77, e.getColumn());
         }
     }
 
@@ -254,8 +254,8 @@ public class HTMLTemplatingTest {
         runFullInternal(compiledTemplate, writer, vars, threadNum, cycle);
 
         long endTime = System.nanoTime();
-        System.out.println("Time: " + ((endTime - startTime) / 1000000) + "ms, "
-                + ((double) cycle * threadNum * 1000000 / (endTime - startTime)) + " db/ms");
+        // System.out.println("Time: " + ((endTime - startTime) / 1000000) + "ms, "
+        // + ((double) cycle * threadNum * 1000000 / (endTime - startTime)) + " db/ms");
 
         try {
             writer.flush();
