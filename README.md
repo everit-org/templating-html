@@ -12,6 +12,10 @@ The goals of the templating engine are:
  - Be extremely fast
  - Have a very small binary and memory footprint
  - Do not do more just HTML templating (No MVC, URL resolving, etc.)
+ - The output is as close to the original template as possible. All of
+   the linebreaks and whitespaces are left there. Bugfixing of a template
+   is much easier in this way. In case you want to save bandwidth, use a
+   ZIP stream. Three whitespaces will cost the almost the same as one. 
  - Allow the programmers to use the code created by web designers as it
    is delivered. Only decoration should with templating specific attributes
    should be done, so the web designer can continue working on the code.
@@ -232,6 +236,27 @@ Let's say that a fragment should be rendered only if it is called:
          data-eht-render="template_ctx.fragmentId == 'myFragment'">
       This is the content of the fragment
     </div>
+
+## Replacing the attribute prefix
+
+By default _data-eht-_ is the prefix for the templating attributes. This
+is good for HTML as in HTML any attribute starting with _data-_ are allowed.
+
+However, in XML someone might wants to use an XML namespace instead. The
+default prefix can be overridde in the constructor of HTMLTemplateCompiler.
+
+    new HTMLTemplateCompiler(expressionCompiler, inlineCompilers, "eht:");
+
+In the XML, the namespace can be defined with the prefix above. In case
+the namespace definition should be hidden in the output, it can be deleted
+by overriding the value of the namespace declaration to null with the
+_attr_ attribute.
+
+    <myElement xmlns:eht="http://ehtNamespace"
+               eht:attr="['xmlns:eht' : null]">
+       ....
+    </myElement>
+
 
 ## Specialties
 
