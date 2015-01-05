@@ -278,8 +278,8 @@ applied, it is possible to use a tag without closing it. E.g.:
 
 Everit HTML templating is often 7-10x faster than concurrent templating
 engines. The test1.html template that is located in the src/main/resources
-folder, can be rendered more than 30 times in a millisec on a Core i5
+folder, can be rendered more than 30 times in a millisecond on a Core i5
 CPU.
 
-Exact benchmarks will come later, but if you are unpatient, you can run
+Exact benchmarks will come later, but if you are impatient, you can run
 one by yourself and share it on the wiki page.
