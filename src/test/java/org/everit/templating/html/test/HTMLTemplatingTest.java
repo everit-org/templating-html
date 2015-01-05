@@ -164,7 +164,8 @@ public class HTMLTemplatingTest {
     @Test
     public void testDuplicateFragmentId() {
         try {
-            createTestEngine().compile("<test data-eht-fragment='fragment1'  /><test data-eht-fragment='fragment1' />",
+            createTestEngine().compile(
+                    "<test data-eht-fragment=\"'fragment1'\"  /><test data-eht-fragment=\"'fragment1'\" />",
                     createTestParserConfiguration());
             Assert.fail("Exception should have been thrown");
         } catch (CompileException e) {
@@ -243,10 +244,10 @@ public class HTMLTemplatingTest {
 
         vars.put("users", users);
 
-        runFullInternal(compiledTemplate, writer, vars, 1, 20000);
+        // runFullInternal(compiledTemplate, writer, vars, 1, 20000);
 
         final int threadNum = 1;
-        final int cycle = 20000;
+        final int cycle = 1;
 
         long startTime = System.nanoTime();
 
@@ -318,7 +319,7 @@ public class HTMLTemplatingTest {
     @Test
     public void testRootFragmentId() {
         try {
-            createTestEngine().compile("<test data-eht-fragment='root' />",
+            createTestEngine().compile("<test data-eht-fragment=\"'root'\" />",
                     createTestParserConfiguration());
             Assert.fail("Exception should have been thrown");
         } catch (CompileException e) {
