@@ -142,6 +142,9 @@ public class HTMLTemplatingUtil {
                 } else if (text.startsWith("&gt;", i)) {
                     result.append('>');
                     i += 4;
+                } else {
+                    result.append(charAt);
+                    i++;
                 }
             }
         }
