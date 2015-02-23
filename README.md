@@ -86,18 +86,34 @@ based on MVEL expressions:
       </tr>
     </table>
 
-Multi foreach is also supported when the Map has more entries. Use this
+Multi-iteration is also supported when the Map has more entries. Use this
 only if you are sure that the Map keeps its insertion order, otherwise
 the output might be "randomized".
 
+### code
+
+It is possible to run a code block. In most cases it is necessary to
+declare new variables.
+
+    <p data-eht-code="var myVar1 = 'Hello'; var myVar2 = myVar1 + ' world!'"
+       data-eht-text="myVar2" />
+
+The code snippet above will write out
+
+    <p>Hello world!</p>
+
 ### var
 
-Declares / assignes one or more variables. The value of the attribute
-must be a Map, where the keys of the Map are the name of the variables
-and the values of the Map are the values of the variables. Example based
-on MVEL:
+Sometimes it is not possible to declare variables with the expression
+language that are put into the variables map. That is where _var_ helps.
 
-    <div data-eht-var="['firstName' : user.firstName, 'lastName' : user.lastName]">
+With _var_ it is possible to declare / assigne one or more variables.
+The value of the attribute must be a Map, where the keys of the Map are the
+name of the variables and the values of the Map are the values of the
+variables. Example based on MVEL:
+
+    <div data-eht-var="['firstName' : user.firstName,
+                        'lastName' : user.lastName]">
         ...
     </div>
 
@@ -160,7 +176,9 @@ Prepends the value of one or more attributes. A Map should be provided where
 the keys are the name of the attributes and the values of the Map are the new
 values.
 
-    <div class="class2" data-eht-attrprepend="['runtimeId' : 'runtime', 'class' : 'class1 ']" />
+    <div class="class2"
+         data-eht-attrprepend="['runtimeId' : 'runtime',
+                                'class' : 'class1 ']" />
 
 The output of the template above will be the following:
 
