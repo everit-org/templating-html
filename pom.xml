@@ -29,7 +29,7 @@
 
   <groupId>org.everit.templating</groupId>
   <artifactId>org.everit.templating.html</artifactId>
-  <version>1.1.0-SNAPSHOT</version>
+  <version>1.1.0</version>
   <packaging>bundle</packaging>
 
   <name>Everit - HTML Templating</name>
@@ -87,11 +87,24 @@
           <instructions>
             <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
             <Export-Package>
-              org.everit.templating.html
+              org.everit.templating.html;version="1.0.1"
             </Export-Package>
             <Import-Package>org.everit.templating;version="[1.0,2)",*</Import-Package>
           </instructions>
         </configuration>
+      </plugin>
+      <plugin>
+        <groupId>net.distilledcode.maven</groupId>
+        <artifactId>baselining-maven-plugin</artifactId>
+        <version>1.0.4</version>
+        <executions>
+          <execution>
+            <id>baseline</id>
+            <goals>
+              <goal>baseline</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
