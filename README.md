@@ -111,6 +111,11 @@ should be rendered:
    will not be part of the output
  - __tag__: Only the element itself is rendered, its content is not
  - __none__: The element is not rendered at all
+ 
+ Boolean values can also be used in the following way:
+ 
+  - __true__: The same as _all_
+  - __false__: The same as _none_
 
 The value of the _render_ attribute can be defined dynamically:
 

@@ -170,6 +170,14 @@ public class TagNode extends ParentNode {
             return RenderScope.ALL;
         }
 
+        if (renderValue instanceof Boolean) {
+            if ((Boolean) renderValue) {
+                return RenderScope.ALL;
+            } else {
+                return RenderScope.NONE;
+            }
+        }
+
         if (renderValue instanceof RenderScope) {
             return (RenderScope) renderValue;
         }

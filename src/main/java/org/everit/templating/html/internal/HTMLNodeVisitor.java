@@ -268,7 +268,13 @@ public class HTMLNodeVisitor extends NodeVisitor {
     private boolean renderNone(final Tag tag) {
         String renderAttributeName = ewtAttributePrefix + "render";
         String renderValue = tag.getAttribute(renderAttributeName);
-        return HTMLTemplatingUtil.attributeConstantEquals("none", renderValue);
+
+        if (renderValue == null) {
+            return false;
+        }
+
+        return HTMLTemplatingUtil.attributeConstantEquals("none", renderValue.trim())
+                || "false".equalsIgnoreCase(renderValue.trim());
     }
 
     private TemplateCompiler resolveInlineCompiler(final Tag tag) {
