@@ -166,6 +166,9 @@ public class HTMLNodeVisitor extends NodeVisitor {
             } else if (ewtAttributeName.equals("foreach")) {
                 throwIfAttributeAlreadyDefined(attribute, tagNode.getForeachExpressionHolder(), tag);
                 tagNode.setForeachExpressionHolder(compileExpression(attribute, tagInfo));
+            } else if (ewtAttributeName.equals("code")) {
+                throwIfAttributeAlreadyDefined(attribute, tagNode.getVarExpressionHolder(), tag);
+                tagNode.setCodeExpressionHolder(compileExpression(attribute, tagInfo));
             } else if (ewtAttributeName.equals("var")) {
                 throwIfAttributeAlreadyDefined(attribute, tagNode.getVarExpressionHolder(), tag);
                 tagNode.setVarExpressionHolder(compileExpression(attribute, tagInfo));

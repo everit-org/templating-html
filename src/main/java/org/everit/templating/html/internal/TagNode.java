@@ -88,6 +88,8 @@ public class TagNode extends ParentNode {
 
     private CompiledExpressionHolder attributePrependMapExpressionHolder;
 
+    private CompiledExpressionHolder codeExpressionHolder = null;
+
     private final boolean emptyTag;
 
     private String endTag = null;
@@ -130,6 +132,14 @@ public class TagNode extends ParentNode {
         if (item.indexVarName != null) {
             vars.put(item.indexVarName, index);
         }
+    }
+
+    private void evaluateCode(final TemplateContextImpl templateContext) {
+        if (codeExpressionHolder == null) {
+            return;
+        }
+
+        codeExpressionHolder.compiledExpression.eval(templateContext.getVars());
     }
 
     private <R> R evaluateExpression(final CompiledExpressionHolder expressionHolder,
@@ -260,6 +270,10 @@ public class TagNode extends ParentNode {
 
     public CompiledExpressionHolder getAttributePrependMapExpressionHolder() {
         return attributePrependMapExpressionHolder;
+    }
+
+    public CompiledExpressionHolder getCodeExpressionHolder() {
+        return codeExpressionHolder;
     }
 
     public CompiledExpressionHolder getForeachExpressionHolder() {
@@ -471,6 +485,7 @@ public class TagNode extends ParentNode {
     }
 
     private void renderItem(final TemplateContextImpl templateContext) {
+        evaluateCode(templateContext);
         final Map<String, Object> tagVars = evaluateTagVariables(templateContext);
 
         if (tagVars != null && tagVars.size() > 0) {
@@ -628,6 +643,10 @@ public class TagNode extends ParentNode {
         this.attributePrependMapExpressionHolder = attributePrependMapExpression;
     }
 
+    public void setCodeExpressionHolder(final CompiledExpressionHolder codeExpressionHolder) {
+        this.codeExpressionHolder = codeExpressionHolder;
+    }
+
     public void setEndTag(final String endTag) {
         this.endTag = endTag;
     }
@@ -655,5 +674,4 @@ public class TagNode extends ParentNode {
     public void setVarExpressionHolder(final CompiledExpressionHolder varExpressionHolder) {
         this.varExpressionHolder = varExpressionHolder;
     }
-
 }

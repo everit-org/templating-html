@@ -249,11 +249,11 @@ public class HTMLTemplatingTest {
         final int threadNum = 1;
         final int cycle = 1;
 
-        long startTime = System.nanoTime();
+        // long startTime = System.nanoTime();
 
         runFullInternal(compiledTemplate, writer, vars, threadNum, cycle);
 
-        long endTime = System.nanoTime();
+        // long endTime = System.nanoTime();
         // System.out.println("Time: " + ((endTime - startTime) / 1000000) + "ms, "
         // + ((double) cycle * threadNum * 1000000 / (endTime - startTime)) + " db/ms");
 
