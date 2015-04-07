@@ -150,6 +150,15 @@ value of the attribute. The text will be escaped.
 
     <td data-eht-text="user.firstName">John</td>
 
+This attribute should be used also if the content of the tag is written with
+a function call directly to the writer. E.g.:
+
+    <td data-eht-text="appender.writeOnWriter()">John</td>
+
+In the example above, the writeOnWriter might be a void function that writes
+onto the same writer that is passed to the CompiledTemplate.render(...)
+function.
+
 ### utext
 
 Same as text, but the text will not be escaped.

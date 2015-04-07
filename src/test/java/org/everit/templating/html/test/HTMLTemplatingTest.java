@@ -339,4 +339,26 @@ public class HTMLTemplatingTest {
             Assert.assertEquals(17, e.getColumn());
         }
     }
+
+    @Test
+    public void testWriterUsageWithText() {
+        String template = "<a><b data-eht-text=\"appender.run()\">someContent</b></a>";
+        TemplateCompiler engine = createTestEngine();
+        CompiledTemplate compiledTemplate = engine.compile(template, new ParserConfiguration(
+            HTMLTemplateCompiler.class.getClassLoader()));
+
+        final StringWriter stringWriter = new StringWriter();
+        Map<String, Object> vars = new HashMap<String, Object>();
+        vars.put("appender", new Runnable() {
+          
+            @Override
+            public void run() {
+                stringWriter.write("Hello world");
+            }
+        });
+
+        compiledTemplate.render(stringWriter, vars);
+
+        Assert.assertEquals("<a><b>Hello world</b></a>", stringWriter.toString());
+    }
 }

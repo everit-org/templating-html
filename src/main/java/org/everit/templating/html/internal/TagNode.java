@@ -384,15 +384,10 @@ public class TagNode extends ParentNode {
             return;
         }
 
-        String text = null;
-        if (render == RenderScope.ALL || render == RenderScope.CONTENT) {
-            text = evaluateText(templateContext.getVars());
-        }
-
         if (render == RenderScope.ALL || render == RenderScope.TAG) {
-            renderTag(templateContext, text, render == RenderScope.ALL);
+            renderTag(templateContext, render == RenderScope.ALL);
         } else {
-
+            String text = evaluateText(templateContext.getVars());
             if (text != null) {
                 templateContext.getWriter().append(text);
             } else {
@@ -574,8 +569,7 @@ public class TagNode extends ParentNode {
         }
     }
 
-    private void renderTag(final TemplateContextImpl templateContext, final String text,
-            final boolean renderBody) {
+    private void renderTag(final TemplateContextImpl templateContext, final boolean renderBody) {
         TemplateWriter writer = templateContext.getWriter();
         writer.append("<").append(tagName);
 
@@ -591,7 +585,7 @@ public class TagNode extends ParentNode {
 
         renderRemainingAttributesFromMaps(templateContext, attributeCtx);
 
-        if (!renderBody || (text == null && getChildren().size() == 0)) {
+        if (!renderBody || (textExpressionHolder == null && getChildren().size() == 0)) {
             if (endTag != null) {
                 writer.append(">").append(endTag);
             } else {
@@ -602,8 +596,11 @@ public class TagNode extends ParentNode {
             }
         } else {
             writer.append(">");
-            if (text != null) {
-                writer.append(text);
+            if (textExpressionHolder != null) {
+                String text = evaluateText(templateContext.getVars());
+                if (text != null) {
+                    writer.append(text);
+                }
             } else {
                 renderChildren(templateContext);
             }
