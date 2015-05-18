@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -39,7 +40,7 @@ public class TagNode extends ParentNode {
   /**
    * One definition of a multi-foreach map.
    */
-  private class ForeachItem {
+  private static class ForeachItem {
     /**
      * Either an array or an iterable.
      */
@@ -129,7 +130,7 @@ public class TagNode extends ParentNode {
 
   /**
    * Constructor.
-   * 
+   *
    * @param tag
    *          The tag that this node definition belongs to.
    */
@@ -158,6 +159,30 @@ public class TagNode extends ParentNode {
       throw new RenderException("Null key in the foreach map: " + foreachMap.toString(),
           foreachExpressionHolder.attributeInfo);
     }
+  }
+
+  private String concatenateAppendIfAvailable(final String attributeName,
+      final RenderableAttribute renderableAttribute, final TagAttributeRenderContext actx,
+      final String attributeValue) {
+    String result = attributeValue;
+    String appendText = resolveXPend(attributeName, actx.appendValueMap,
+        renderableAttribute.getAppendExpressionHolder(), actx.templateContext);
+    if (appendText != null) {
+      result = ((attributeValue != null) ? attributeValue : "") + appendText;
+    }
+    return result;
+  }
+
+  private String concatenatePrependIfAvailable(final String attributeName,
+      final RenderableAttribute renderableAttribute, final TagAttributeRenderContext actx,
+      final String attributeValue) {
+    String result = attributeValue;
+    String prependText = resolveXPend(attributeName, actx.prependValueMap,
+        renderableAttribute.getPrependExpressionHolder(), actx.templateContext);
+    if (prependText != null) {
+      result = prependText + ((attributeValue != null) ? attributeValue : "");
+    }
+    return result;
   }
 
   private void evaluateCode(final TemplateContextImpl templateContext) {
@@ -226,8 +251,8 @@ public class TagNode extends ParentNode {
     } else {
       renderString = (String) renderValue;
     }
-    renderString = renderString.toUpperCase();
-    return RenderScope.valueOf(renderString.toUpperCase());
+    renderString = renderString.toUpperCase(Locale.getDefault());
+    return RenderScope.valueOf(renderString);
   }
 
   private Map<String, Object> evaluateTagVariables(final TemplateContextImpl templateContext) {
@@ -378,44 +403,6 @@ public class TagNode extends ParentNode {
           .append(HTMLTemplatingUtil.escape(attributeValue))
           .append(quoteString);
     }
-  }
-
-  private String concatenatePrependIfAvailable(final String attributeName,
-      final RenderableAttribute renderableAttribute, final TagAttributeRenderContext actx,
-      final String attributeValue) {
-    String result = attributeValue;
-    String prependText = resolveXPend(attributeName, actx.prependValueMap,
-        renderableAttribute.getPrependExpressionHolder(), actx.templateContext);
-    if (prependText != null) {
-      result = prependText + ((attributeValue != null) ? attributeValue : "");
-    }
-    return result;
-  }
-
-  private String concatenateAppendIfAvailable(final String attributeName,
-      final RenderableAttribute renderableAttribute, final TagAttributeRenderContext actx,
-      final String attributeValue) {
-    String result = attributeValue;
-    String appendText = resolveXPend(attributeName, actx.appendValueMap,
-        renderableAttribute.getAppendExpressionHolder(), actx.templateContext);
-    if (appendText != null) {
-      result = ((attributeValue != null) ? attributeValue : "") + appendText;
-    }
-    return result;
-  }
-
-  private PageAttribute resolvePageAttribute(final RenderableAttribute renderableAttribute) {
-    PageAttribute pageAttribute = renderableAttribute.getPageAttribute();
-    if (pageAttribute == null) {
-      pageAttribute = renderableAttribute.getExpressionPageAttribute();
-      if (pageAttribute == null) {
-        pageAttribute = renderableAttribute.getPrependPageAttribute();
-      }
-      if (pageAttribute == null) {
-        pageAttribute = renderableAttribute.getAppendPageAttribute();
-      }
-    }
-    return pageAttribute;
   }
 
   private void renderContent(final TemplateContextImpl templateContext) {
@@ -663,6 +650,20 @@ public class TagNode extends ParentNode {
       }
       writer.append(">");
     }
+  }
+
+  private PageAttribute resolvePageAttribute(final RenderableAttribute renderableAttribute) {
+    PageAttribute pageAttribute = renderableAttribute.getPageAttribute();
+    if (pageAttribute == null) {
+      pageAttribute = renderableAttribute.getExpressionPageAttribute();
+      if (pageAttribute == null) {
+        pageAttribute = renderableAttribute.getPrependPageAttribute();
+      }
+      if (pageAttribute == null) {
+        pageAttribute = renderableAttribute.getAppendPageAttribute();
+      }
+    }
+    return pageAttribute;
   }
 
   private String resolveXPend(final String attributeName, final Map<String, Object> xpendValueMap,

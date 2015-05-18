@@ -24,7 +24,7 @@ public class InlineNode implements HTMLNode {
 
   private final CompiledTemplate compiledTemplate;
 
-  public InlineNode(final org.everit.templating.CompiledTemplate compiledTemplate) {
+  public InlineNode(final CompiledTemplate compiledTemplate) {
     this.compiledTemplate = compiledTemplate;
   }
 
