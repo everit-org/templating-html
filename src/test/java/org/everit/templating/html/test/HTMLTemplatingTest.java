@@ -43,9 +43,9 @@ import org.junit.Test;
  */
 public class HTMLTemplatingTest {
 
-  private static final int INITIAL_START_ROW = 10;
-
   private static final int INITIAL_START_COLUMN = 11;
+
+  private static final int INITIAL_START_ROW = 10;
 
   private static String readTemplate(final String templateName) {
     InputStream stream = HTMLTemplatingTest.class.getClassLoader().getResourceAsStream(
@@ -354,6 +354,16 @@ public class HTMLTemplatingTest {
       Assert.assertEquals(initialRowPlusLineBreaks, e.getLineNumber());
     }
 
+  }
+
+  @Test
+  public void testLTInText() {
+    StringWriter writer = new StringWriter();
+    String template = "<b><a> some text with <in it</a> and <one more</b>";
+    createTestEngine().compile(template, createTestParserConfiguration())
+        .render(writer, new HashMap<String, Object>());
+
+    Assert.assertEquals(template, writer.toString());
   }
 
   @Test

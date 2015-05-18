@@ -301,6 +301,12 @@ public class HTMLNodeVisitor extends NodeVisitor {
     }
   }
 
+  private void handleFakeTag(final Tag tag) {
+    if (visitMode != VisitMode.NONE) {
+      currentSB.append(tag.getPage().getText(tag.getStartPosition(), tag.getEndPosition()));
+    }
+  }
+
   private void handleNonEWTNode(final Tag tag) {
     if (!tag.isEmptyXmlTag()) {
       visitorPath.add(new VisitorPathElement().withTag(tag));
@@ -612,7 +618,10 @@ public class HTMLNodeVisitor extends NodeVisitor {
 
   @Override
   public void visitTag(final Tag tag) {
-    if (handleTageInNoneAndInlineMode(tag)) {
+    if (fakeTag(tag)) {
+      handleFakeTag(tag);
+      return;
+    } else if (handleTageInNoneAndInlineMode(tag)) {
       return;
     } else if (handleRenderNoneTag(tag)) {
       return;
