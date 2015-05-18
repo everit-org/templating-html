@@ -1,18 +1,17 @@
-/**
- * This file is part of Everit - HTML Templating.
+/*
+ * Copyright (C) 2011 Everit Kft. (http://www.everit.biz)
  *
- * Everit - HTML Templating is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * Everit - HTML Templating is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ *         http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with Everit - HTML Templating.  If not, see <http://www.gnu.org/licenses/>.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.everit.templating.html;
 
@@ -38,91 +37,98 @@ import org.htmlparser.util.ParserException;
  */
 public class HTMLTemplateCompiler implements TemplateCompiler {
 
-    /**
-     * Default prefix for HTML templating attributes.
-     */
-    public static final String DEFAULT_ATTRIBUTE_PREFIX = "data-eht-";
+  /**
+   * Default prefix for HTML templating attributes.
+   */
+  public static final String DEFAULT_ATTRIBUTE_PREFIX = "data-eht-";
 
-    /**
-     * The prefix of the Web Templating attributes. By default it is "data-ewt-".
-     */
-    private final String ehtAttributeprefix;
+  /**
+   * The prefix of the Web Templating attributes. By default it is "data-ewt-".
+   */
+  private final String ehtAttributeprefix;
 
-    /**
-     * The compiler for expressions.
-     */
-    private final ExpressionCompiler expressionCompiler;
+  /**
+   * The compiler for expressions.
+   */
+  private final ExpressionCompiler expressionCompiler;
 
-    /**
-     * Map of inline compilers that can be used as part of the HTML template.
-     */
-    private final Map<String, TemplateCompiler> inlineCompilers;
+  /**
+   * Map of inline compilers that can be used as part of the HTML template.
+   */
+  private final Map<String, TemplateCompiler> inlineCompilers;
 
-    /**
-     * Creates a new TemplateCompiler with the {@value #DEFAULT_ATTRIBUTE_PREFIX} default attribute prefix.
-     *
-     * @param expressionCompiler
-     *            The compiler for expressions.
-     */
-    public HTMLTemplateCompiler(final ExpressionCompiler expressionCompiler) {
-        this(DEFAULT_ATTRIBUTE_PREFIX, expressionCompiler, new HashMap<String, TemplateCompiler>());
+  /**
+   * Creates a new TemplateCompiler with the {@value #DEFAULT_ATTRIBUTE_PREFIX} default attribute
+   * prefix.
+   *
+   * @param expressionCompiler
+   *          The compiler for expressions.
+   */
+  public HTMLTemplateCompiler(final ExpressionCompiler expressionCompiler) {
+    this(DEFAULT_ATTRIBUTE_PREFIX, expressionCompiler, new HashMap<String, TemplateCompiler>());
+  }
+
+  /**
+   * Creates a new TemplateCompiler with the {@value #DEFAULT_ATTRIBUTE_PREFIX} default attribute
+   * prefix.
+   *
+   * @param expressionCompiler
+   *          The compiler for expressions.
+   * @param inlineCompilers
+   *          Inline compilers can be used to put fragments into the HTML template with different
+   *          syntax. E.g.: A Javascript should be templated with different syntax.
+   */
+  public HTMLTemplateCompiler(final ExpressionCompiler expressionCompiler,
+      final Map<String, TemplateCompiler> inlineCompilers) {
+    this(DEFAULT_ATTRIBUTE_PREFIX, expressionCompiler, inlineCompilers);
+  }
+
+  /**
+   * Creates a new TemplateCompiler with the {@value #DEFAULT_ATTRIBUTE_PREFIX} default attribute
+   * prefix.
+   *
+   * @param expressionCompiler
+   *          The compiler for expressions.
+   * @param inlineCompilers
+   *          Inline compilers can be used to put fragments into the HTML template with different
+   *          syntax. E.g.: A Javascript should be templated with different syntax.
+   * @param ehtAttributeprefix
+   *          The prefix of the attributes of HTML templating.
+   */
+  public HTMLTemplateCompiler(final String ehtAttributeprefix,
+      final ExpressionCompiler expressionCompiler,
+      final Map<String, TemplateCompiler> inlineCompilers) {
+    this.ehtAttributeprefix = ehtAttributeprefix;
+    this.expressionCompiler = expressionCompiler;
+    this.inlineCompilers = new HashMap<String, TemplateCompiler>(inlineCompilers);
+  }
+
+  @Override
+  public CompiledTemplate compile(final char[] document, final int templateStart,
+      final int templateLength,
+      final ParserConfiguration parserConfiguration) {
+    return compile(String.valueOf(document, templateStart, templateLength), parserConfiguration);
+  }
+
+  @Override
+  public CompiledTemplate compile(final String template,
+      final ParserConfiguration parserConfiguration) {
+    Source source = new StringSource(template);
+    Page page = new Page(source);
+    Lexer lexer = new Lexer(page);
+    HTMLNodeVisitor visitor = new HTMLNodeVisitor(ehtAttributeprefix, expressionCompiler,
+        inlineCompilers,
+        parserConfiguration);
+    visitor.beginParsing();
+    try {
+      for (Node node = lexer.nextNode(); node != null; node = lexer.nextNode()) {
+        node.accept(visitor);
+      }
+    } catch (ParserException e) {
+      throw new RuntimeException(e);
     }
-
-    /**
-     * Creates a new TemplateCompiler with the {@value #DEFAULT_ATTRIBUTE_PREFIX} default attribute prefix.
-     *
-     * @param expressionCompiler
-     *            The compiler for expressions.
-     * @param inlineCompilers
-     *            Inline compilers can be used to put fragments into the HTML template with different syntax. E.g.: A
-     *            Javascript should be templated with different syntax.
-     */
-    public HTMLTemplateCompiler(final ExpressionCompiler expressionCompiler,
-            final Map<String, TemplateCompiler> inlineCompilers) {
-        this(DEFAULT_ATTRIBUTE_PREFIX, expressionCompiler, inlineCompilers);
-    }
-
-    /**
-     * Creates a new TemplateCompiler with the {@value #DEFAULT_ATTRIBUTE_PREFIX} default attribute prefix.
-     *
-     * @param expressionCompiler
-     *            The compiler for expressions.
-     * @param inlineCompilers
-     *            Inline compilers can be used to put fragments into the HTML template with different syntax. E.g.: A
-     *            Javascript should be templated with different syntax.
-     * @param ehtAttributeprefix
-     *            The prefix of the attributes of HTML templating.
-     */
-    public HTMLTemplateCompiler(final String ehtAttributeprefix, final ExpressionCompiler expressionCompiler,
-            final Map<String, TemplateCompiler> inlineCompilers) {
-        this.ehtAttributeprefix = ehtAttributeprefix;
-        this.expressionCompiler = expressionCompiler;
-        this.inlineCompilers = new HashMap<String, TemplateCompiler>(inlineCompilers);
-    }
-
-    @Override
-    public CompiledTemplate compile(final char[] document, final int templateStart, final int templateLength,
-            final ParserConfiguration parserConfiguration) {
-        return compile(String.valueOf(document, templateStart, templateLength), parserConfiguration);
-    }
-
-    @Override
-    public CompiledTemplate compile(final String template, final ParserConfiguration parserConfiguration) {
-        Source source = new StringSource(template);
-        Page page = new Page(source);
-        Lexer lexer = new Lexer(page);
-        HTMLNodeVisitor visitor = new HTMLNodeVisitor(ehtAttributeprefix, expressionCompiler, inlineCompilers,
-                parserConfiguration);
-        visitor.beginParsing();
-        try {
-            for (Node node = lexer.nextNode(); node != null; node = lexer.nextNode()) {
-                node.accept(visitor);
-            }
-        } catch (ParserException e) {
-            throw new RuntimeException(e);
-        }
-        visitor.finishedParsing();
-        return new CompiledTemplateImpl(visitor.getRootNode());
-    }
+    visitor.finishedParsing();
+    return new CompiledTemplateImpl(visitor.getRootNode());
+  }
 
 }

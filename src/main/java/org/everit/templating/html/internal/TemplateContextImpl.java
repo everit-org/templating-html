@@ -1,18 +1,17 @@
-/**
- * This file is part of Everit - HTML Templating.
+/*
+ * Copyright (C) 2011 Everit Kft. (http://www.everit.biz)
  *
- * Everit - HTML Templating is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * Everit - HTML Templating is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ *         http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with Everit - HTML Templating.  If not, see <http://www.gnu.org/licenses/>.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.everit.templating.html.internal;
 
@@ -24,30 +23,46 @@ import org.everit.templating.CompiledTemplate;
 import org.everit.templating.util.AbstractTemplateContext;
 import org.everit.templating.util.TemplateWriter;
 
+/**
+ * Template rendering context.
+ */
 public class TemplateContextImpl extends AbstractTemplateContext {
 
-    private final CompiledTemplate compiledTemplate;
+  private final CompiledTemplate compiledTemplate;
 
-    private final TemplateWriter writer;
+  private final TemplateWriter writer;
 
-    public TemplateContextImpl(final CompiledTemplate compiledTemplate, final String fragmentId,
-            final Map<String, Object> vars, final Writer writer) {
-        super(fragmentId, vars);
-        this.compiledTemplate = compiledTemplate;
-        this.writer = new TemplateWriter(writer);
-    }
+  /**
+   * Constructor.
+   *
+   * @param compiledTemplate
+   *          The compiled template that is rendered.
+   * @param fragmentId
+   *          The id of the fragment that is rendered or <code>null</code> if the full template is
+   *          rendered.
+   * @param vars
+   *          The variables that is used to render the template.
+   * @param writer
+   *          The writer where the rendered template will be written to.
+   */
+  public TemplateContextImpl(final CompiledTemplate compiledTemplate, final String fragmentId,
+      final Map<String, Object> vars, final Writer writer) {
+    super(fragmentId, vars);
+    this.compiledTemplate = compiledTemplate;
+    this.writer = new TemplateWriter(writer);
+  }
 
-    public TemplateWriter getWriter() {
-        return writer;
-    }
+  public TemplateWriter getWriter() {
+    return writer;
+  }
 
-    @Override
-    public String renderFragmentInternal(final String fragmentId, final Map<String, Object> vars) {
-        StringWriter stringWriter = new StringWriter();
+  @Override
+  public String renderFragmentInternal(final String fragmentId, final Map<String, Object> vars) {
+    StringWriter stringWriter = new StringWriter();
 
-        compiledTemplate.render(stringWriter, vars, fragmentId);
+    compiledTemplate.render(stringWriter, vars, fragmentId);
 
-        return stringWriter.toString();
-    }
+    return stringWriter.toString();
+  }
 
 }
