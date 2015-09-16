@@ -316,4 +316,3 @@ CPU.
 Exact benchmarks will come later, but if you are impatient, you can run
 one by yourself and share it on the wiki page.
 
-[![Analytics](https://ga-beacon.appspot.com/UA-15041869-4/everit-org/templating-html)](https://github.com/igrigorik/ga-beacon)
