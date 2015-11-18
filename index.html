@@ -1,0 +1,398 @@
+<!DOCTYPE HTML>
+<!--
+
+    Copyright (C) 2011 Everit Kft. (http://www.everit.org)
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+            http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<html>
+
+<head>
+<meta charset="utf-8">
+<title>Templating Web</title>
+<link rel="icon" type="image/ico" href="http://www.everit.org/fonts/favicon.ico">
+
+<!--    <link rel="stylesheet" type="text/css" href="common/css/base.css">-->
+<link href="http://www.everit.org/css/bootstrap.min.css" rel="stylesheet">
+<link href="http://www.everit.org/css/docs.min.css" rel="stylesheet">
+<link href="http://www.everit.org/css/everit.css" rel="stylesheet">
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push([ '_setAccount', 'UA-15041869-4' ]);
+  _gaq.push([ '_setDomainName', 'everit.org' ]);
+  _gaq.push([ '_trackPageview' ]);
+</script>
+</head>
+
+<body class="bs-docs-home" data-spy="scroll" data-target="#affix-nav">
+  <a class="sr-only" href="#content">Skip to main content</a>
+  <header class="navbar navbar-static-top bs-docs-nav" id="top" role="banner">
+    <div class="container">
+      <div class="navbar-header">
+        <button class="navbar-toggle" type="button" data-toggle="collapse"
+          data-target=".bs-navbar-collapse">
+          <span class="sr-only">Toggle navigation</span> <span class="icon-bar"></span> <span
+            class="icon-bar"></span> <span class="icon-bar"></span>
+        </button>
+        <a href="#" class="navbar-brand">Index</a>
+      </div>
+      <nav class="collapse navbar-collapse bs-navbar-collapse" role="navigation">
+        <ul class="nav navbar-nav">
+          <li><a href="https://github.com/everit-org/templating-web" target="_blank">Source</a></li>
+          <li><a href="http://www.everit.org/" target="_blank">Community</a></li>
+        </ul>
+        <ul class="nav navbar-nav navbar-right">
+          <li><a href="http://www.everit.biz" target="_blank">Enterprise</a></li>
+          <li><a href="http://everitorg.wordpress.com/" target="_blank">Blog</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="bs-docs-masthead everit-header" id="content" role="main">
+    <div class="container">
+      <span class="bs-docs-booticon bs-docs-booticon-lg bs-docs-booticon-outline"> <img
+        class="logo" src="http://www.everit.org/fonts/sbz_e.svg" alt="E">
+      </span>
+      <p class="lead">Templating Web</p>
+    </div>
+  </div>
+  <div class="container">
+    <div class="col-md-10">
+
+      <div class="bs-docs-featurette cookbook">
+        <h2 id="introduction" class="bs-docs-featurette-title">Introduction</h2>
+        <p>Everit Web Templating can be used to render web pages based on HTML templates. The
+          library can also be used to generate XMLs as XML syntax is compatible with HTML.</p>
+        <p>The goals of the templating engine are:</p>
+        <ul>
+          <li>Be extremely fast</li>
+          <li>Have a very small binary and memory footprint</li>
+          <li>Do not do more just HTML templating (No MVC, URL resolving, etc.)</li>
+          <li>The output is as close to the original template as possible. All of the
+            linebreaks and whitespaces are left there. Bugfixing of a template is much easier in
+            this way. In case you want to save bandwidth, use a ZIP stream. Three whitespaces will
+            cost the almost the same as one.</li>
+          <li>Allow the programmers to use the code created by web designers as it is
+            delivered. Only decoration should with templating specific attributes should be done, so
+            the web designer can continue working on the code.</li>
+        </ul>
+      </div>
+      <hr class="featurette-divider">
+
+      <div class="bs-docs-featurette cookbook">
+        <h2 id="usage" class="bs-docs-featurette-title">Usage</h2>
+        <pre class="prettyprint">// Get a template from somewhere (e.g.: from a file)
+String text = "<span data-eht-text='name' />";
+
+// Instantiate any expression compiler (e.g.: MVEL)
+ExpressionCompiler expressionCompiler = new MvelExpressionCompiler();
+
+// Instantiate template compiler and pass the expression compiler
+HTMLTemplateCompiler compiler = new HTMLTemplateCompiler(expressionCompiler);
+
+// Get a classloader that can be used to compile the template if necessary
+ClassLoader cl = this.getClass().getClassLoader();
+
+// Instantiate a ParserConfiguration
+ParserConfiguration configuration = new ParserConfiguration(cl);
+
+// Compile the template
+CompiledTemplate template = compiler.compile(text, configuration);
+
+/////////////////////////////////////////////////////////////////////////
+// Rendering the template
+/////////////////////////////////////////////////////////////////////////
+
+// Create a map for the variables that can be used within the template
+Map&lt;String, Object&gt; vars = new HashMap&lt;&gt;();
+vars.put("name", "John Doe");
+
+// Get a Writer from somewhere (e.g.: a ResponseWriter or a StringWriter
+Writer writer = new StringWriter();
+
+// Render the template to the writer
+template.render(writer, vars);
+
+// In this example we write out the result to the standard output
+System.out.println(writer.toString());</pre>
+      </div>
+      <hr class="featurette-divider">
+
+      <div class="bs-docs-featurette cookbook">
+        <h2 id="attributes" class="bs-docs-featurette-title">Attributes</h2>
+        <h3 id="foreach">foreach</h3>
+        <p>Iterates through the elements of an Iterable element, Object array or primitive
+          array. The value of the attribute must be a Map where the key is the name of the variable
+          that holds the element of the iteration, the value holds the collection that is iterated.
+          Example based on MVEL:</p>
+        <pre class="prettyprint">&lt;table&gt;
+  &lt;tr data-eht-foreach="['user' : users]"&gt;
+    &lt;td data-eht-text="user.firstName"&gt;John&lt;/td&gt;
+    &lt;td data-eht-text="user.lastName"&gt;Doe&lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/table&gt;</pre>
+        <p>An array of two Strings can be defined as the key of the Map. In that case the first
+          element of the array will show the name of the variable of the element, while the second
+          String will be the name of the index variable. Example based on MVEL expressions:</p>
+        <pre class="prettyprint">&lt;table>
+  &lt;tr data-eht-foreach="[({'user', 'index'}) : users]"&gt;
+    &lt;td data-eht-text="index + 1"&gt;1&lt;/td&gt;
+    &lt;td data-eht-text="user.firstName"&gt;John&lt;/td&gt;
+    &lt;td data-eht-text="user.lastName"&gt;Doe&lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/table&gt;</pre>
+        <p>Multi-iteration is also supported when the Map has more entries. Use this only if you
+          are sure that the Map keeps its insertion order, otherwise the output might be
+          "randomized".</p>
+        <h3 id="code">code</h3>
+        <p>It is possible to run a code block. In most cases it is necessary to declare new
+          variables.</p>
+        <pre class="prettyprint">&lt;p data-eht-code="var myVar1 = 'Hello'; var myVar2 = myVar1 + ' world!'"
+   data-eht-text="myVar2" /&gt;</pre>
+        <p>The code snippet above will write out</p>
+        <pre class="prettyprint"> &lt;p&gtHello world!&lt/p&gt;</pre>
+        <h3 id="var">var</h3>
+        <p>
+          Sometimes it is not possible to declare variables with the expression language that are
+          put into the variables map. That is where <i>var</i> helps.
+        </p>
+        <p>
+          With <i>var</i> it is possible to declare / assigne one or more variables. The value of
+          the attribute must be a Map, where the keys of the Map are the name of the variables and
+          the values of the Map are the values of the variables. Example based on MVEL:
+        </p>
+        <pre class="prettyprint">&lt;div data-eht-var="['firstName' : user.firstName,
+                    'lastName' : user.lastName]"&gt;
+    ...
+&lt;/div&gt;</pre>
+        <h3 id="render">render</h3>
+        <p>A case-insensitive String value that tells which parts of the element should be
+          rendered:</p>
+        <ul>
+          <li><b>all</b>: The element and its body is rendered. This is the default.</li>
+          <li><b>content</b>: Only the body of the element is rendered, the element itself will
+            not be part of the output</li>
+          <li><b>tag</b>: Only the element itself is rendered, its content is not</li>
+          <li><b>none</b>: The element is not rendered at all</li>
+        </ul>
+        <p>Boolean values can also be used in the following way:</p>
+        <ul>
+          <li><b>true</b>: The same as all</li>
+          <li><b>false</b>: The same as none</li>
+        </ul>
+        <p>The value of the render attribute can be defined dynamically:</p>
+        <pre class="prettyprint">&lt;span data-eht-render="user.firstName == 'John' ? 'all' : 'none'"&gt;...&lt;/span&gt;</pre>
+        <p>In case none is specified as a constant, the parsing of the element and its content
+          is skipped completely. This is useful if we want to comment something out from the
+          template in the way that it is not processed:</p>
+        <pre class="prettyprint">&lt;span data-eht-render="'none'"&gt;...&lt;/span&gt;</pre>
+        <h3 id="text">text</h3>
+        <p>Replaces the content of the element with the result of the evaluation of the value of
+          the attribute. The text will be escaped.</p>
+        <pre class="prettyprint">&lt;td data-eht-text="user.firstName"&gt;John&lt;/td&gt;</pre>
+        <p>This attribute should be used also if the content of the tag is written with a
+          function call directly to the writer. E.g.:</p>
+        <pre class="prettyprint">&lt;td data-eht-text="appender.writeOnWriter()"&gt;John&lt;/td&gt;</pre>
+        <p>In the example above, the writeOnWriter might be a void function that writes onto the
+          same writer that is passed to the CompiledTemplate.render(...) function.</p>
+        <h3 id="utext">utext</h3>
+        <p>Same as text, but the text will not be escaped.</p>
+        <h3 id="attr">attr</h3>
+        <p>A Map of attribute overrides.</p>
+        <pre class="prettyprint">&lt;div id="testId" data-eht-attr="['id' : 'runtimeId', 'class' : 'someClass']" /&gt;</pre>
+        <p>The output of the template above will be the following:</p>
+        <pre class="prettyprint">&lt;div id="runtimeId" class="someClass" /&gt;</pre>
+        <h3 id="attr_">attr-*</h3>
+        <p>It possible to override the value of any attribute by defining a new value.</p>
+        <pre class="prettyprint">&lt;span id="testId" data-eht-attr-id="'runtimeId'" /&gt;</pre>
+        <h3 id="attrprepend">attrprepend</h3>
+        <p>Prepends the value of one or more attributes. A Map should be provided where the keys
+          are the name of the attributes and the values of the Map are the new values.</p>
+        <pre class="prettyprint">&lt;div class="class2"
+  data-eht-attrprepend="['runtimeId' : 'runtime',
+                         'class' : 'class1 ']" /&gt;</pre>
+        <p>The output of the template above will be the following:</p>
+        <pre class="prettyprint">&lt;div class="class1 class2" id="runtimeId" /&gt;</pre>
+        <h3 id="attrprepend_">attrprepend-*</h3>
+        <p>
+          As with <i>attr-*</i>, it is possible to prepend attributes. A String should be provided!
+        </p>
+        <pre class="prettyprint">&lt;div id="Id" data-eht-attrprepend-id="'runtime'" /&gt;</pre>
+        <p>The output of the template above will be the following:</p>
+        <pre class="prettyprint">&lt;div id="runtimeId" /&gt;</pre>
+        <h3 id="attrappend">attrappend</h3>
+        <p>
+          Same as <i>attrPrepend</i>, but it appends the newly defined values to the end of the
+          original attributes.
+        </p>
+        <h3 id="attrappend_">attrappend-*</h3>
+        <p>
+          Same as <i>attrprepend-*</i>, but it appends the newly defined value to the end of the
+          original attribute.
+        </p>
+        <h3 id="inline">inline</h3>
+        <p>It is possible to mix the syntax of the template with other template syntaxes. This
+          is useful if some other format should be embedded whithin a template, e.g.: a javascript.</p>
+        <p>Inline template compilers must be defined during the initialization of the HTML
+          template compiler.</p>
+        <pre class="prettyprint">// Instantiate any expression compiler (e.g.: MVEL)
+ExpressionCompiler expressionCompiler = new MvelExpressionCompiler();
+
+// Create the inline compilers and put them into a Map
+TemplateCompiler textCompiler = new TextTemplateCompiler(expressionCompiler);
+
+Map&lt;String, TemplateCompiler&gt; inlineCompilers = new HashMap&lt;&gt;();
+inlineCompilers.put("text", textCompiler);
+
+// Instantiate template compiler and pass the expression compiler
+HTMLTemplateCompiler compiler = new HTMLTemplateCompiler(expressionCompiler);
+
+// Compile and render the template...</pre>
+        <p>
+          In the example above one inline compiler was defined with the text identifier. In the
+          template the same identifier should be used within the <i>fragment</i> attribute as a
+          constant String.
+        </p>
+        <pre class="prettyprint">&lt;script type="text/javascript" data-eht-inline="'text'"&gt;
+  var firstName = @{user.firstName};
+&lt;/script&gt;</pre>
+
+        <h3 id="fragment">fragment</h3>
+        <p>It is possible to define fragments that can be rendered separately, too.</p>
+        <pre class="prettyprint">&lt;div data-eht-fragment="'myFragment'"&gt;
+  This is the content of the fragment
+&lt;/div&gt;</pre>
+        <p>The fragment can be rendered programmatically:</p>
+        <pre class="prettyprint">template.render(writer, vars, "myFragment");</pre>
+        <p>It is also possible to render a fragment from any place of the template that defined
+          it:</p>
+        <pre class="prettyprint">&lt;div data-eht-utext="template_ctx.renderFragment('myFragment')" /&gt;</pre>
+        <p>Let's say that a fragment should be rendered only if it is called:</p>
+        <pre class="prettyprint">&lt;div data-eht-fragment="'myFragment'"
+     data-eht-render="template_ctx.fragmentId == 'myFragment'"&gt;
+  This is the content of the fragment
+&lt;/div&gt;</pre>
+        <h3 id="replacing_the_attribute_prefix">Replacing the attribute prefix</h3>
+        <p>
+          By default data-eht- is the prefix for the templating attributes. This is good for HTML as
+          in HTML any attribute starting with <i>data-</i> are allowed.
+        </p>
+        <p>However, in XML someone might wants to use an XML namespace instead. The default
+          prefix can be overridde in the constructor of HTMLTemplateCompiler.</p>
+        <pre class="prettyprint">new HTMLTemplateCompiler(expressionCompiler, inlineCompilers, "eht:");</pre>
+        <p>
+          In the XML, the namespace can be defined with the prefix above. In case the namespace
+          definition should be hidden in the output, it can be deleted by overriding the value of
+          the namespace declaration to null with the <i>attr</i> attribute.
+        </p>
+        <pre class="prettyprint">&lt;myElement xmlns:eht="http://ehtNamespace"
+           eht:attr="['xmlns:eht' : null]"&gt;
+   ....
+&lt;/myElement&gt;</pre>
+      </div>
+      <hr class="featurette-divider">
+
+      <div class="bs-docs-featurette cookbook">
+        <h2 id="specialties" class="bs-docs-featurette-title">Specialties</h2>
+        <h3 id="works_with_xml">Works with XML</h3>
+        <p>Web Templating can be used to generate XML documents as XML has stricter rules than
+          HTML.</p>
+        <pre class="prettyprint">// TODO example of using custom namespace.</pre>
+        <h3 id="works_with_unclosed_elements">Works with unclosed elements</h3>
+        <p>In XML all tags must be closed. However, in HTML the same rules are not applied, it
+          is possible to use a tag without closing it. E.g.:</p>
+        <pre class="prettyprint">&lt;div&gt;&lt;span&gt;MyText&lt;/div&gt;</pre>
+        <h3 id="extremely_fast">Extremely fast</h3>
+        <p>Everit HTML templating is often 7-10x faster than concurrent templating engines. The
+          test1.html template that is located in the src/main/resources folder, can be rendered more
+          than 30 times in a millisecond on a Core i5 CPU.</p>
+        <p>Exact benchmarks will come later, but if you are impatient, you can run one by
+          yourself and share it on the wiki page.</p>
+      </div>
+      <hr class="featurette-divider">
+    </div>
+
+    <!--        Affix-->
+    <div class="col-md-2 col-sm-0 col-xs-0">
+      <nav id="affix-nav">
+        <ul class="nav nav-pills nav-stacked everit-affix" data-spy="affix" data-offset-top="350"
+          data-offset-bottom="140">
+          <li class="active"><a href="#introduction">Introduction</a></li>
+          <li><a href="#usage">Usage</a></li>
+          <li><a href="#attributes">Attributes</a>
+            <ul class="nav nav-pills nav-stacked">
+              <li><a href="#foreach">foreach</a></li>
+              <li><a href="#code">code</a></li>
+              <li><a href="#var">var</a></li>
+              <li><a href="#render">render</a></li>
+              <li><a href="#text">text</a></li>
+              <li><a href="#utext">utext</a></li>
+              <li><a href="#attr">attr</a></li>
+              <li><a href="#attr_">attr-*</a></li>
+              <li><a href="#attrprepend">attrprepend</a></li>
+              <li><a href="#attrprepend_">attrprepend-*</a></li>
+              <li><a href="#attrappend">attrappend</a></li>
+              <li><a href="#attrappend_">attrappend-*</a></li>
+              <li><a href="#inline">inline</a></li>
+              <li><a href="#fragment">fragment</a></li>
+              <li><a href="#replacing_the_attribute_prefix">Replacing the attribute prefix</a></li>
+            </ul></li>
+          <li><a href="#specialties">Specialties</a>
+            <ul class="nav nav-pills nav-stacked">
+              <li><a href="#works_with_xml">Works with XML</a></li>
+              <li><a href="#works_with_unclosed_elements">Works with unclosed elements</a></li>
+              <li><a href="#extremely_fast">Extremely fast</a></li>
+            </ul></li>
+        </ul>
+      </nav>
+    </div>
+  </div>
+
+  <div></div>
+  <footer class="bs-docs-footer" role="contentinfo">
+    <div class="container">
+      <div class="bs-docs-social">
+        <ul class="bs-docs-social-buttons">
+          <li class="follow-btn "><a href="https://twitter.com/EveritOrg"
+            class="twitter-follow-button" data-show-count="true">Follow @EveritOrg</a></li>
+          <li class="tweet-btn"><a href="https://twitter.com/share"
+            class="twitter-share-button" data-url="http://www.everit.org/">Tweet</a></li>
+        </ul>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Bootstrap core JavaScript
+================================================== -->
+  <!-- Placed at the end of the document so the pages load faster -->
+  <script src="http://www.everit.org/js/jquery-2.1.1.min.js"></script>
+  <script src="http://www.everit.org/js/bootstrap.min.js"></script>
+  <script src="http://www.everit.org/js/everit.js "></script>
+  <script type="text/javascript">
+      (function() {
+        var ga = document.createElement('script');
+        ga.type = 'text/javascript';
+        ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl'
+            : 'http://www')
+            + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0];
+        s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+  <script src="http://www.everit.org/js/prettify/run_prettify.js"></script>
+</body>
+
+</html>
