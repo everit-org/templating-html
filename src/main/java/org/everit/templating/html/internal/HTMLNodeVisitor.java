@@ -194,7 +194,7 @@ public class HTMLNodeVisitor extends NodeVisitor {
       renderableAttribute.setPageAttribute(attribute);
       renderableAttribute.setPreviousText(textBeforeAttribute);
       if (renderableAttribute.getConstantValue() != null) {
-        HTMLTemplatingUtil.throwCompileExceptionForAttribute(
+        HTMLTemplatingUtil.throwCompileExceptionForAttribute(getTemplateFileName(),
             "Duplicate attribute: " + attribute.getName(), tag, attribute, false, startPosition);
       }
       renderableAttribute.setConstantValue(attribute.getValue());
@@ -250,10 +250,14 @@ public class HTMLNodeVisitor extends NodeVisitor {
     return rootNode;
   }
 
+  private String getTemplateFileName() {
+    return parserConfiguration.getName();
+  }
+
   private void handleEWTNode(final Tag tag, final Vector<PageAttribute> attributes) {
     appendCurrentSBAndClear();
 
-    TagNode tagNode = new TagNode(tag);
+    TagNode tagNode = new TagNode(tag, getTemplateFileName());
     tagNode.setTagName(tag.getRawTagName());
     Iterator<PageAttribute> iterator = attributes.iterator();
     // First attribute is the name of the tag
@@ -275,7 +279,7 @@ public class HTMLNodeVisitor extends NodeVisitor {
     TemplateCompiler inlineCompiler = resolveInlineCompiler(tag);
 
     if ((inlineCompiler != null) && (tagNode.getTextExpressionHolder() != null)) {
-      HTMLTemplatingUtil.throwCompileExceptionForAttribute(
+      HTMLTemplatingUtil.throwCompileExceptionForAttribute(getTemplateFileName(),
           "Inline and text cannot be used together within the same tag", tag, null, false,
           startPosition);
     }
@@ -442,7 +446,7 @@ public class HTMLNodeVisitor extends NodeVisitor {
       processAttrAppendPrefixedAttribute(tag, tagNode, attribute, textBeforeAttribute, tagInfo,
           ehtAttributeName);
     } else if (!"inline".equals(ehtAttributeName)) {
-      HTMLTemplatingUtil.throwCompileExceptionForAttribute(
+      HTMLTemplatingUtil.throwCompileExceptionForAttribute(getTemplateFileName(),
           "Unrecognized attribute name: " + attribute.getName(), tag, attribute, false,
           startPosition);
     }
@@ -455,12 +459,11 @@ public class HTMLNodeVisitor extends NodeVisitor {
         .eval(new HashMap<String, Object>());
 
     if (fragmentNameObj == null) {
-      HTMLTemplatingUtil.throwCompileExceptionForAttribute("Null value defined as fragmentId",
-          tag,
-          attribute, false, startPosition);
+      HTMLTemplatingUtil.throwCompileExceptionForAttribute(getTemplateFileName(),
+          "Null value defined as fragmentId", tag, attribute, false, startPosition);
     }
 
-    rootNode.addFragment(String.valueOf(fragmentNameObj), tagNode, attribute,
+    rootNode.addFragment(getTemplateFileName(), String.valueOf(fragmentNameObj), tagNode, attribute,
         startPosition, tag);
   }
 
@@ -485,7 +488,8 @@ public class HTMLNodeVisitor extends NodeVisitor {
       return null;
     }
     if (!(attribute instanceof PageAttribute)) {
-      throw new RuntimeException("attribute must be an instance of PageAttribute");
+      throw new RuntimeException(
+          getTemplateFileName() + "attribute must be an instance of PageAttribute");
     }
 
     PageAttribute inlineAttribute = (PageAttribute) attribute;
@@ -497,9 +501,10 @@ public class HTMLNodeVisitor extends NodeVisitor {
     if (evaluatedInline != null) {
       TemplateCompiler inlineCompiler = inlineCompilers.get(evaluatedInline);
       if (inlineCompiler == null) {
-        HTMLTemplatingUtil.throwCompileExceptionForAttribute(
+        HTMLTemplatingUtil.throwCompileExceptionForAttribute(getTemplateFileName(),
             "No compiler found for inline type: "
-                + evaluatedInline, tag, inlineAttribute, true, startPosition);
+                + evaluatedInline,
+            tag, inlineAttribute, true, startPosition);
       }
       return inlineCompiler;
     }
@@ -510,9 +515,9 @@ public class HTMLNodeVisitor extends NodeVisitor {
   private void throwIfAttributeAlreadyDefined(final PageAttribute attribute,
       final CompiledExpressionHolder expression, final Tag tag) {
     if (expression != null) {
-      HTMLTemplatingUtil.throwCompileExceptionForAttribute("Attribute is defined more than once",
-          tag, attribute,
-          false, startPosition);
+      HTMLTemplatingUtil.throwCompileExceptionForAttribute(getTemplateFileName(),
+          "Attribute is defined more than once",
+          tag, attribute, false, startPosition);
     }
   }
 
@@ -587,7 +592,8 @@ public class HTMLNodeVisitor extends NodeVisitor {
     Coordinate previousStartPosition = startPosition;
     startPosition = HTMLTemplatingUtil.calculateCoordinate(remark.getPage(),
         remark.getStartPosition()
-            + remarkOpenTagLength, previousStartPosition);
+            + remarkOpenTagLength,
+        previousStartPosition);
     parentNode = new RootNode();
     visitorPath = new LinkedList<VisitorPathElement>();
     visitorPath.add(new VisitorPathElement().withEwtNode(parentNode));

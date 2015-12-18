@@ -34,6 +34,8 @@ public class RootNode extends ParentNode {
   /**
    * Adds a fragment to the template that can be rendered directly.
    *
+   * @param templateFileName
+   *          the name of the template file.
    * @param name
    *          The name of the fragment.
    * @param tagNode
@@ -45,10 +47,10 @@ public class RootNode extends ParentNode {
    * @param tag
    *          The tag that contains the <code>data-eht-fragment</code> attribute.
    */
-  public void addFragment(final String name, final TagNode tagNode, final PageAttribute attribute,
-      final Coordinate templateStartCoordinate, final Tag tag) {
+  public void addFragment(final String templateFileName, final String name, final TagNode tagNode,
+      final PageAttribute attribute, final Coordinate templateStartCoordinate, final Tag tag) {
     if ("root".equals(name)) {
-      HTMLTemplatingUtil.throwCompileExceptionForAttribute(
+      HTMLTemplatingUtil.throwCompileExceptionForAttribute(templateFileName,
           "'root' cannot be used as a fragment id as it is reserved for the template itself", tag,
           attribute,
           true, templateStartCoordinate);
