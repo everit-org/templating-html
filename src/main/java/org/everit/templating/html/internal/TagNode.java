@@ -122,6 +122,8 @@ public class TagNode extends ParentNode {
 
   private String tagName;
 
+  private final String templateFileName;
+
   private CompiledExpressionHolder textExpressionHolder = null;
 
   private final char[] textRepresentation;
@@ -133,8 +135,10 @@ public class TagNode extends ParentNode {
    *
    * @param tag
    *          The tag that this node definition belongs to.
+   * @param templateFileName
+   *          the name of the template file.
    */
-  public TagNode(final Tag tag) {
+  public TagNode(final Tag tag, final String templateFileName) {
     emptyTag = tag.isEmptyXmlTag();
     Page page = tag.getPage();
     startPositionInTemplate = tag.getStartPosition();
@@ -142,7 +146,7 @@ public class TagNode extends ParentNode {
     int length = endPosition - startPositionInTemplate;
     textRepresentation = new char[length];
     page.getText(textRepresentation, 0, startPositionInTemplate, endPosition);
-
+    this.templateFileName = templateFileName;
   }
 
   private void assignForEachVariables(final Map<String, Object> vars, final ForeachItem item,
@@ -156,7 +160,8 @@ public class TagNode extends ParentNode {
 
   private void checkForeachKeyNotNull(final Map<Object, Object> foreachMap, final Object key) {
     if (key == null) {
-      throw new RenderException("Null key in the foreach map: " + foreachMap.toString(),
+      throw new RenderException(templateFileName,
+          "Null key in the foreach map: " + foreachMap.toString(),
           foreachExpressionHolder.attributeInfo);
     }
   }
@@ -205,7 +210,7 @@ public class TagNode extends ParentNode {
     }
 
     if (!clazz.isAssignableFrom(result.getClass())) {
-      throw new RenderException("The result type " + result.getClass()
+      throw new RenderException(templateFileName, "The result type " + result.getClass()
           + " cannot be assigned to the expected type " + clazz.getName(),
           expressionHolder.attributeInfo);
     }
@@ -265,7 +270,7 @@ public class TagNode extends ParentNode {
       return null;
     }
     if (!(result instanceof Map)) {
-      throw new RenderException(
+      throw new RenderException(templateFileName,
           "Unrecognized type at attribute override map: " + result.getClass(),
           varExpressionHolder.attributeInfo);
     }
@@ -274,7 +279,8 @@ public class TagNode extends ParentNode {
 
     for (Object key : tagVarMap.keySet()) {
       if ((key == null) || !(key instanceof String)) {
-        throw new RenderException("Attribute override Map should have only String keys: " + key,
+        throw new RenderException(templateFileName,
+            "Attribute override Map should have only String keys: " + key,
             varExpressionHolder.attributeInfo);
       }
     }
@@ -443,7 +449,8 @@ public class TagNode extends ParentNode {
       }
 
       if (!value.getClass().isArray() && !(value instanceof Iterable)) {
-        throw new RenderException("Unrecognized value type in foreach map: " + value.getClass(),
+        throw new RenderException(templateFileName,
+            "Unrecognized value type in foreach map: " + value.getClass(),
             foreachExpressionHolder.attributeInfo);
       }
 
@@ -455,8 +462,9 @@ public class TagNode extends ParentNode {
       } else if (key instanceof Object[]) {
         Object[] foreachKeyObjArray = (Object[]) key;
         if ((foreachKeyObjArray.length == 0) || (foreachKeyObjArray.length > 2)) {
-          throw new RenderException("Foreach key should contain one or two elements: "
-              + Arrays.toString(foreachKeyObjArray),
+          throw new RenderException(templateFileName,
+              "Foreach key should contain one or two elements: "
+                  + Arrays.toString(foreachKeyObjArray),
               foreachExpressionHolder.attributeInfo);
         }
         valueVarName = String.valueOf(foreachKeyObjArray[0]);
@@ -464,7 +472,8 @@ public class TagNode extends ParentNode {
           indexVarName = String.valueOf(foreachKeyObjArray[1]);
         }
       } else {
-        throw new RenderException("Unrecognized type for foreach key: " + key.getClass(),
+        throw new RenderException(templateFileName,
+            "Unrecognized type for foreach key: " + key.getClass(),
             foreachExpressionHolder.attributeInfo);
       }
       ForeachItem item = new ForeachItem();

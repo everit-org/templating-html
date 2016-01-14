@@ -32,8 +32,10 @@ public class RenderException extends CompileException {
    * @param attributeInfo
    *          The attribute that had an expression that initiated this exception.
    */
-  public RenderException(final String message, final AttributeInfo attributeInfo) {
-    super(message, attributeInfo.tagInfo.chars, attributeInfo.valueCursorInTag);
+  public RenderException(final String templateFileName, final String message,
+      final AttributeInfo attributeInfo) {
+    super("[Name: " + templateFileName + "] " + message,
+        attributeInfo.tagInfo.chars, attributeInfo.valueCursorInTag);
     setColumn(attributeInfo.valueStartCoordinate.column);
     setLineNumber(attributeInfo.valueStartCoordinate.row);
   }

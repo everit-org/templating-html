@@ -25,15 +25,15 @@ import org.htmlparser.lexer.PageAttribute;
  */
 public final class HTMLTemplatingUtil {
 
+  private static final String ESCAPED_AMP = "&amp;";
+
+  private static final String ESCAPED_APOS = "&apos;";
+
   private static final String ESCAPED_GT = "&gt;";
 
   private static final String ESCAPED_LT = "&lt;";
 
   private static final String ESCAPED_QUOT = "&quot;";
-
-  private static final String ESCAPED_APOS = "&apos;";
-
-  private static final String ESCAPED_AMP = "&amp;";
 
   /**
    * Checks whether the value of an attribute is equal to the expected in the way that the value of
@@ -69,7 +69,7 @@ public final class HTMLTemplatingUtil {
 
   /**
    * Calculates the coordinate within a page based on an initial offset.
-   * 
+   *
    * @param page
    *          The HTML/XML page.
    * @param cursor
@@ -89,7 +89,7 @@ public final class HTMLTemplatingUtil {
 
   /**
    * Escapes special characters (and, lt, gt, quot, apos) within the text.
-   * 
+   *
    * @param textString
    *          The text that should be escaped.
    * @return The escaped text.
@@ -124,7 +124,7 @@ public final class HTMLTemplatingUtil {
 
   /**
    * Generates a String that contains the specified character N times.
-   * 
+   *
    * @param c
    *          The character that will be repeated.
    * @param n
@@ -142,7 +142,9 @@ public final class HTMLTemplatingUtil {
   /**
    * Throws an exception for an eht attribute with all information that can be useful for the
    * programmer.
-   * 
+   *
+   * @param templateFileName
+   *          the name of the template file.
    * @param message
    *          The message that should be part of the exception.
    * @param tag
@@ -154,8 +156,8 @@ public final class HTMLTemplatingUtil {
    * @param startPosition
    *          The starting position of the template.
    */
-  public static void throwCompileExceptionForAttribute(final String message, final Tag tag,
-      final PageAttribute attribute,
+  public static void throwCompileExceptionForAttribute(final String templateFileName,
+      final String message, final Tag tag, final PageAttribute attribute,
       final boolean positionOfAttributeValue, final Coordinate startPosition) {
     Page page = tag.getPage();
     int tagStartPosition = tag.getStartPosition();
@@ -176,7 +178,8 @@ public final class HTMLTemplatingUtil {
 
     }
 
-    CompileException e = new CompileException(message, expr, cursor);
+    CompileException e = new CompileException("[Name: " + templateFileName + "] " + message,
+        expr, cursor);
 
     Coordinate position = HTMLTemplatingUtil.calculateCoordinate(page, positionInPage,
         startPosition);
@@ -188,7 +191,7 @@ public final class HTMLTemplatingUtil {
 
   /**
    * Unescapes special expressions (amp, quot, apostrophe, gt, lt) of a text.
-   * 
+   *
    * @param text
    *          The text that will be unescaped.
    * @return The unescaped text.

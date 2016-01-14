@@ -27,8 +27,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.commons.jexl2.JexlException;
 import org.everit.expression.ParserConfiguration;
-import org.everit.expression.mvel.MvelExpressionCompiler;
+import org.everit.expression.jexl.JexlExpressionCompiler;
 import org.everit.templating.CompiledTemplate;
 import org.everit.templating.TemplateCompiler;
 import org.everit.templating.TemplateContext;
@@ -74,7 +75,7 @@ public class HTMLTemplatingTest {
 
   private TemplateCompiler createTestEngine() {
     Map<String, TemplateCompiler> inlineCompilers = new HashMap<String, TemplateCompiler>();
-    MvelExpressionCompiler expressionCompiler = new MvelExpressionCompiler();
+    JexlExpressionCompiler expressionCompiler = new JexlExpressionCompiler();
     inlineCompilers.put("text", new TextTemplateCompiler(expressionCompiler));
     TemplateCompiler engine = new HTMLTemplateCompiler(expressionCompiler, inlineCompilers);
     return engine;
@@ -214,12 +215,9 @@ public class HTMLTemplatingTest {
           .render(new StringWriter(), new HashMap<String, Object>());
 
       Assert.fail("Exception should have been thrown");
-    } catch (CompileException e) {
-      Assert.assertEquals(INITIAL_START_ROW, e.getLineNumber());
-
-      final int offsetOrErrorInText = 24;
-      final int offsetOfErrorWithInitialColumn = INITIAL_START_COLUMN + offsetOrErrorInText;
-      Assert.assertEquals(offsetOfErrorWithInitialColumn, e.getColumn());
+    } catch (JexlException e) {
+      System.out.println(e.getMessage());
+      Assert.assertEquals("@1:7 parsing error near '... ull : ({\"\" ...'", e.getMessage());
     }
   }
 
@@ -231,18 +229,14 @@ public class HTMLTemplatingTest {
           .render(new StringWriter(), new HashMap<String, Object>());
 
       Assert.fail("Exception should have been thrown");
-    } catch (CompileException e) {
-      Assert.assertEquals(INITIAL_START_ROW, e.getLineNumber());
-
-      final int offsetOrErrorInText = 24;
-      final int offsetOfErrorWithInitialColumn = INITIAL_START_COLUMN + offsetOrErrorInText;
-      Assert.assertEquals(offsetOfErrorWithInitialColumn, e.getColumn());
+    } catch (JexlException e) {
+      Assert.assertEquals("@1:9 parsing error near '... st\" : \"tes ...'", e.getMessage());
     }
   }
 
   @Test
   public void testFull() {
-    MvelExpressionCompiler expressionCompiler = new MvelExpressionCompiler();
+    JexlExpressionCompiler expressionCompiler = new JexlExpressionCompiler();
 
     Map<String, TemplateCompiler> inlineCompilers = new HashMap<String, TemplateCompiler>();
     inlineCompilers.put("text", new TextTemplateCompiler(expressionCompiler));
@@ -337,21 +331,15 @@ public class HTMLTemplatingTest {
     try {
       engine.compile("\n<test data-eht-inline=\"'text'\">@{[[][}</test>", parserConfiguration);
       Assert.fail("Should throw an exception");
-    } catch (org.mvel2.CompileException e) {
-      final int offsetOfErrorSinceLineBreak = 34;
-      Assert.assertEquals(offsetOfErrorSinceLineBreak, e.getColumn());
-      int initialRowPlusLineBreaks = INITIAL_START_ROW + 1;
-      Assert.assertEquals(initialRowPlusLineBreaks, e.getLineNumber());
+    } catch (JexlException e) {
+      Assert.assertEquals("@1:4 parsing error in '[[]['", e.getMessage());
     }
 
     try {
       engine.compile("\n<test data-eht-inline=\"'text'\">\n@{[[][}</test>", parserConfiguration);
       Assert.fail("Should throw an exception");
-    } catch (org.mvel2.CompileException e) {
-      final int offsetOfErrorSinceLineBreak = 3;
-      Assert.assertEquals(offsetOfErrorSinceLineBreak, e.getColumn());
-      int initialRowPlusLineBreaks = INITIAL_START_ROW + 2;
-      Assert.assertEquals(initialRowPlusLineBreaks, e.getLineNumber());
+    } catch (JexlException e) {
+      Assert.assertEquals("@1:4 parsing error in '[[]['", e.getMessage());
     }
 
   }

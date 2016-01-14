@@ -41,27 +41,27 @@
   <p data-eht-utext="'&lt;span style=&quot;font-weight: bold;&quot;&gt;Hello world!&lt;/span&gt;'">This text should be replaced with bold hello world!</p>
   
   <!-- Attribute creation -->
-  <p data-eht-attr="['class' : 'font-weight: bold;']">This text should be bold as class is created with attr map.</p>
+  <p data-eht-attr="{'class' : 'font-weight: bold;'}">This text should be bold as class is created with attr map.</p>
   
   <p  data-eht-attr-class="'font-weight: bold;'">This text should be bold as class is created with attr-*.</p>
   
-  <p  data-eht-attr-class="'font-weight: bold;'" data-eht-attr="['class' : 'font-weight: italic;']">This text should be italic as class is created with both attr map and attr-*.</p>
+  <p  data-eht-attr-class="'font-weight: bold;'" data-eht-attr="{'class' : 'font-weight: italic;'}">This text should be italic as class is created with both attr map and attr-*.</p>
   
   <!-- Attribute override -->
   
-  <p class="font-weight: normal;" data-eht-attr="['class' : 'font-weight: bold;']">This text should be bold as class is replaced with attr map.</p>
+  <p class="font-weight: normal;" data-eht-attr="{'class' : 'font-weight: bold;'}">This text should be bold as class is replaced with attr map.</p>
   
   <p class="font-weight: normal;" data-eht-attr-class="'font-weight: bold;'">This text should be bold as class is replaced with attr-*.</p>
   
-  <p class="font-weight: normal;" data-eht-attr-class="'font-weight: bold;'" data-eht-attr="['class' : 'font-weight: italic;']">This text should be italic as class is replaced with both attr map and attr-*.</p>
+  <p class="font-weight: normal;" data-eht-attr-class="'font-weight: bold;'" data-eht-attr="{'class' : 'font-weight: italic;'}">This text should be italic as class is replaced with both attr map and attr-*.</p>
   
   <p id="shouldNotAppear" data-eht-attr-id="null"></p>
   
   <!-- Attribute prepending and appending -->
   
-  <p class="font-weight: normal;" data-eht-attr="['class' : 'font-weight: bold;']" data-eht-attrprepend="['class' : 'font-size: 2em; ']" data-eht-attrappend="['class' : ' color: red;']">This red text should be large and bold as class is replaced, appended and prepended.</p>
+  <p class="font-weight: normal;" data-eht-attr="{'class' : 'font-weight: bold;'}" data-eht-attrprepend="{'class' : 'font-size: 2em; '}" data-eht-attrappend="{'class' : ' color: red;'}">This red text should be large and bold as class is replaced, appended and prepended.</p>
   
-  <p data-eht-attr="['class' : 'font-weight: bold;']" data-eht-attrprepend="['class' : 'font-size: 2em; ']" data-eht-attrappend="['class' : ' color: red;']">This red text should be large and bold as class is created with append and prepended.</p>
+  <p data-eht-attr="{'class' : 'font-weight: bold;'}" data-eht-attrprepend="{'class' : 'font-size: 2em; '}" data-eht-attrappend="{'class' : ' color: red;'}">This red text should be large and bold as class is created with append and prepended.</p>
   
   <p data-eht-attrprepend-class="'font-weight: bold;'">Bold text with prepend-*</p>
   
@@ -71,12 +71,12 @@
 
   <!-- Test variable creation -->
   
-  <p data-eht-var="['hello_world' : 'Hello world']" data-eht-text="hello_world" />
-  <p data-eht-var="['hello_world' : hello_world + 'again']" data-eht-text="hello_world" />
+  <p data-eht-var="{'hello_world' : 'Hello world'}" data-eht-text="hello_world" />
+  <p data-eht-var="{'hello_world' : hello_world + 'again'}" data-eht-text="hello_world" />
   
   <!-- Variable creation with code -->
   
-  <p data-eht-code="var myVar1 = 'Hello'; var myVar2 = myVar1 + ' world!'" data-eht-text="myVar2" />
+  <p data-eht-code="myVar1 = 'Hello'; myVar2 = myVar1 + ' world!'" data-eht-text="myVar2" />
   
   <!-- Test render -->
   <p data-eht-render="'all'">Should be rendered</p>
@@ -94,9 +94,9 @@
   <!-- Test foreach -->
 
   <table>
-    <tr data-eht-foreach="[({'user'}) : users]"
-        data-eht-var="['rowId' : user.userId]"
-        data-eht-attr="['id' : user]">
+    <tr data-eht-foreach="var userKey = ['user']; return {userKey : users}"
+        data-eht-var="{'rowId' : user.userId}"
+        data-eht-attr="{'id' : user}">
       <td><span data-eht-text="user.firstName">John</span></td>
       <td><span data-eht-text="user.lastName">Doe</span></td>
     </tr>
@@ -115,7 +115,7 @@
   <!-- Testing Fragment -->
 
   <div id="fragment1" data-eht-fragment="'fragment1'" data-eht-render="(template_ctx.fragmentId == 'fragment1') ? 'all' : 'none'">
-    Hello <span data-eht-text="(isdef param1) ? param1 : 'fragment'" ></span> world!
+    Hello <span data-eht-text="param1 ? param1 : 'fragment'" ></span> world!
   </div>
 
   <div>Fragment will appear</div>
@@ -124,11 +124,11 @@
     This will be replaced.
   </div>
   
-  <div data-eht-utext="template_ctx.renderFragment('fragment1', (['param1' : 'EHT']))" data-eht-render="'content'">
+  <div data-eht-utext="template_ctx.renderFragment('fragment1', ({'param1' : 'EHT'}))" data-eht-render="'content'">
     This will be replaced.
   </div>
 
-  <script type="text/ewt-javascript" data-eht-inline="'text'" data-eht-attr="['type' : 'text/javascript']">
+  <script type="text/ewt-javascript" data-eht-inline="'text'" data-eht-attr="{'type' : 'text/javascript'}">
     var sizeOfUsers = @{users.size()};
   </script>
 
