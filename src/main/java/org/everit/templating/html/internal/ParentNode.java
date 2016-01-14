@@ -31,7 +31,7 @@ public abstract class ParentNode implements HTMLNode {
 
   /**
    * Renders the children of the HTML tag.
-   * 
+   *
    * @param templateContext
    *          The current context of the rendering process.
    */

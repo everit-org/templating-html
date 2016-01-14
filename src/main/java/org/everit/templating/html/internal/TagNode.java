@@ -64,7 +64,7 @@ public class TagNode extends ParentNode {
 
     public final Map<String, Object> valueMap;
 
-    public TagAttributeRenderContext(final TemplateContextImpl templateContext) {
+    TagAttributeRenderContext(final TemplateContextImpl templateContext) {
 
       @SuppressWarnings("unchecked")
       Map<String, Object> lam = evaluateExpression(attributeMapExpressionHolder, templateContext,

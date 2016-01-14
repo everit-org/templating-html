@@ -55,7 +55,7 @@ public class HTMLNodeVisitor extends NodeVisitor {
 
     public TemplateCompiler templateCompiler;
 
-    public InlineContext(final TemplateCompiler templateCompiler, final Coordinate position) {
+    InlineContext(final TemplateCompiler templateCompiler, final Coordinate position) {
       this.templateCompiler = templateCompiler;
       this.position = position;
     }
@@ -403,52 +403,55 @@ public class HTMLNodeVisitor extends NodeVisitor {
       final PageAttribute attribute, final String textBeforeAttribute, final String attributeName) {
     TagInfo tagInfo = new TagInfo(tag);
     String ehtAttributeName = attributeName.substring(ehtAttributePrefix.length());
-    if ("fragment".equals(ehtAttributeName)) {
-      processFragmentAttribute(tag, tagNode, attribute, tagInfo);
-    } else if ("foreach".equals(ehtAttributeName)) {
-      throwIfAttributeAlreadyDefined(attribute, tagNode.getForeachExpressionHolder(), tag);
-      tagNode.setForeachExpressionHolder(compileExpression(attribute, tagInfo));
-    } else if ("code".equals(ehtAttributeName)) {
-      throwIfAttributeAlreadyDefined(attribute, tagNode.getVarExpressionHolder(), tag);
-      tagNode.setCodeExpressionHolder(compileExpression(attribute, tagInfo));
-    } else if ("var".equals(ehtAttributeName)) {
-      throwIfAttributeAlreadyDefined(attribute, tagNode.getVarExpressionHolder(), tag);
-      tagNode.setVarExpressionHolder(compileExpression(attribute, tagInfo));
-    } else if ("render".equals(ehtAttributeName)) {
-      throwIfAttributeAlreadyDefined(attribute, tagNode.getRenderExpressionHolder(), tag);
-      tagNode.setRenderExpressionHolder(compileExpression(attribute, tagInfo));
-    } else if ("text".equals(ehtAttributeName)) {
-      throwIfAttributeAlreadyDefined(attribute, tagNode.getTextExpressionHolder(), tag);
-      tagNode.setTextExpressionHolder(compileExpression(attribute, tagInfo));
-      tagNode.setEscapeText(true);
-    } else if ("utext".equals(ehtAttributeName)) {
-      throwIfAttributeAlreadyDefined(attribute, tagNode.getTextExpressionHolder(), tag);
-      tagNode.setTextExpressionHolder(compileExpression(attribute, tagInfo));
-      tagNode.setEscapeText(false);
-    } else if ("attr".equals(ehtAttributeName)) {
-      throwIfAttributeAlreadyDefined(attribute, tagNode.getAttributeMapExpressionHolder(), tag);
-      tagNode.setAttributeMapExpressionHolder(compileExpression(attribute, tagInfo));
-    } else if ("attrprepend".equals(ehtAttributeName)) {
-      throwIfAttributeAlreadyDefined(attribute, tagNode.getAttributePrependMapExpressionHolder(),
-          tag);
-      tagNode.setAttributePrependMapExpressionHolder(compileExpression(attribute, tagInfo));
-    } else if ("attrappend".equals(ehtAttributeName)) {
-      throwIfAttributeAlreadyDefined(attribute, tagNode.getAttributeAppendMapExpressionHolder(),
-          tag);
-      tagNode.setAttributeAppendMapExpressionHolder(compileExpression(attribute, tagInfo));
-    } else if (ehtAttributeName.startsWith("attr-")) {
-      processAttrPrefixedAttribute(tag, tagNode, attribute, textBeforeAttribute, tagInfo,
-          ehtAttributeName);
-    } else if (ehtAttributeName.startsWith("attrprepend-")) {
-      processAttrPrependPrefixedAttribute(tag, tagNode, attribute, textBeforeAttribute, tagInfo,
-          ehtAttributeName);
-    } else if (ehtAttributeName.startsWith("attrappend-")) {
-      processAttrAppendPrefixedAttribute(tag, tagNode, attribute, textBeforeAttribute, tagInfo,
-          ehtAttributeName);
-    } else if (!"inline".equals(ehtAttributeName)) {
-      HTMLTemplatingUtil.throwCompileExceptionForAttribute(getTemplateFileName(),
-          "Unrecognized attribute name: " + attribute.getName(), tag, attribute, false,
-          startPosition);
+
+    switch (ehtAttributeName) {
+      case "fragment":
+        processFragmentAttribute(tag, tagNode, attribute, tagInfo);
+        break;
+      case "foreach":
+        throwIfAttributeAlreadyDefined(attribute, tagNode.getForeachExpressionHolder(), tag);
+        tagNode.setForeachExpressionHolder(compileExpression(attribute, tagInfo));
+        break;
+      case "code":
+        throwIfAttributeAlreadyDefined(attribute, tagNode.getVarExpressionHolder(), tag);
+        tagNode.setCodeExpressionHolder(compileExpression(attribute, tagInfo));
+        break;
+      case "var":
+        throwIfAttributeAlreadyDefined(attribute, tagNode.getVarExpressionHolder(), tag);
+        tagNode.setVarExpressionHolder(compileExpression(attribute, tagInfo));
+        break;
+      case "render":
+        throwIfAttributeAlreadyDefined(attribute, tagNode.getRenderExpressionHolder(), tag);
+        tagNode.setRenderExpressionHolder(compileExpression(attribute, tagInfo));
+        break;
+      case "text":
+        throwIfAttributeAlreadyDefined(attribute, tagNode.getTextExpressionHolder(), tag);
+        tagNode.setTextExpressionHolder(compileExpression(attribute, tagInfo));
+        tagNode.setEscapeText(true);
+        break;
+      case "utext":
+        throwIfAttributeAlreadyDefined(attribute, tagNode.getTextExpressionHolder(), tag);
+        tagNode.setTextExpressionHolder(compileExpression(attribute, tagInfo));
+        tagNode.setEscapeText(false);
+        break;
+      case "attr":
+        throwIfAttributeAlreadyDefined(attribute, tagNode.getAttributeMapExpressionHolder(), tag);
+        tagNode.setAttributeMapExpressionHolder(compileExpression(attribute, tagInfo));
+        break;
+      case "attrprepend":
+        throwIfAttributeAlreadyDefined(attribute, tagNode.getAttributePrependMapExpressionHolder(),
+            tag);
+        tagNode.setAttributePrependMapExpressionHolder(compileExpression(attribute, tagInfo));
+        break;
+      case "attrappend":
+        throwIfAttributeAlreadyDefined(attribute, tagNode.getAttributeAppendMapExpressionHolder(),
+            tag);
+        tagNode.setAttributeAppendMapExpressionHolder(compileExpression(attribute, tagInfo));
+        break;
+      default:
+        processNonFixedLengthEhtAttribute(tag, tagNode, attribute, textBeforeAttribute, tagInfo,
+            ehtAttributeName);
+        break;
     }
   }
 
@@ -465,6 +468,25 @@ public class HTMLNodeVisitor extends NodeVisitor {
 
     rootNode.addFragment(getTemplateFileName(), String.valueOf(fragmentNameObj), tagNode, attribute,
         startPosition, tag);
+  }
+
+  private void processNonFixedLengthEhtAttribute(final Tag tag, final TagNode tagNode,
+      final PageAttribute attribute,
+      final String textBeforeAttribute, final TagInfo tagInfo, final String ehtAttributeName) {
+    if (ehtAttributeName.startsWith("attr-")) {
+      processAttrPrefixedAttribute(tag, tagNode, attribute, textBeforeAttribute, tagInfo,
+          ehtAttributeName);
+    } else if (ehtAttributeName.startsWith("attrprepend-")) {
+      processAttrPrependPrefixedAttribute(tag, tagNode, attribute, textBeforeAttribute, tagInfo,
+          ehtAttributeName);
+    } else if (ehtAttributeName.startsWith("attrappend-")) {
+      processAttrAppendPrefixedAttribute(tag, tagNode, attribute, textBeforeAttribute, tagInfo,
+          ehtAttributeName);
+    } else if (!"inline".equals(ehtAttributeName)) {
+      HTMLTemplatingUtil.throwCompileExceptionForAttribute(getTemplateFileName(),
+          "Unrecognized attribute name: " + attribute.getName(), tag, attribute, false,
+          startPosition);
+    }
   }
 
   private boolean renderNone(final Tag tag) {
