@@ -15,7 +15,7 @@
  */
 package org.everit.templating.html.internal;
 
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -95,6 +95,8 @@ public class HTMLNodeVisitor extends NodeVisitor {
       return this;
     }
   }
+
+  private static final Map<String, Object> EMPTY_VAR_MAP = Collections.emptyMap();
 
   private StringBuilder currentSB = new StringBuilder();
 
@@ -458,8 +460,7 @@ public class HTMLNodeVisitor extends NodeVisitor {
   private void processFragmentAttribute(final Tag tag, final TagNode tagNode,
       final PageAttribute attribute, final TagInfo tagInfo) {
     CompiledExpressionHolder compileExpression = compileExpression(attribute, tagInfo);
-    Object fragmentNameObj = compileExpression.compiledExpression
-        .eval(new HashMap<String, Object>());
+    Object fragmentNameObj = compileExpression.compiledExpression.eval(EMPTY_VAR_MAP);
 
     if (fragmentNameObj == null) {
       HTMLTemplatingUtil.throwCompileExceptionForAttribute(getTemplateFileName(),
@@ -518,15 +519,14 @@ public class HTMLNodeVisitor extends NodeVisitor {
 
     CompiledExpression compiledExpression =
         compileExpression(inlineAttribute, new TagInfo(tag)).compiledExpression;
-    Object evaluatedInline = compiledExpression.eval(new HashMap<String, Object>());
+    Object evaluatedInline = compiledExpression.eval(EMPTY_VAR_MAP);
 
     if (evaluatedInline != null) {
       TemplateCompiler inlineCompiler = inlineCompilers.get(evaluatedInline);
       if (inlineCompiler == null) {
         HTMLTemplatingUtil.throwCompileExceptionForAttribute(getTemplateFileName(),
-            "No compiler found for inline type: "
-                + evaluatedInline,
-            tag, inlineAttribute, true, startPosition);
+            "No compiler found for inline type: " + evaluatedInline, tag, inlineAttribute, true,
+            startPosition);
       }
       return inlineCompiler;
     }
