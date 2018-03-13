@@ -118,7 +118,7 @@ public class HTMLNodeVisitor extends NodeVisitor {
 
   private VisitMode visitMode = VisitMode.NORMAL;
 
-  private LinkedList<VisitorPathElement> visitorPath = new LinkedList<VisitorPathElement>();
+  private LinkedList<VisitorPathElement> visitorPath = new LinkedList<>();
 
   /**
    * Constructor.
@@ -183,8 +183,8 @@ public class HTMLNodeVisitor extends NodeVisitor {
   }
 
   private void fillEhtTagNodeWithAttribute(final Tag tag, final TagNode tagNode,
-      final PageAttribute attribute,
-      final String textBeforeAttribute) {
+      final PageAttribute attribute, final String textBeforeAttribute) {
+
     String attributeName = attribute.getName();
     if (attributeName.startsWith(ehtAttributePrefix)) {
       processEhtAttribute(tag, tagNode, attribute, textBeforeAttribute, attributeName);
@@ -197,7 +197,7 @@ public class HTMLNodeVisitor extends NodeVisitor {
         HTMLTemplatingUtil.throwCompileExceptionForAttribute(getTemplateFileName(),
             "Duplicate attribute: " + attribute.getName(), tag, attribute, false, startPosition);
       }
-      renderableAttribute.setConstantValue(attribute.getValue());
+      renderableAttribute.setConstantValue(HTMLTemplatingUtil.unescape(attribute.getValue()));
     }
   }
 
@@ -617,7 +617,7 @@ public class HTMLNodeVisitor extends NodeVisitor {
             + remarkOpenTagLength,
         previousStartPosition);
     parentNode = new RootNode();
-    visitorPath = new LinkedList<VisitorPathElement>();
+    visitorPath = new LinkedList<>();
     visitorPath.add(new VisitorPathElement().withEwtNode(parentNode));
 
     try {

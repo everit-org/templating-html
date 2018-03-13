@@ -74,7 +74,7 @@ public class HTMLTemplatingTest {
   }
 
   private TemplateCompiler createTestEngine() {
-    Map<String, TemplateCompiler> inlineCompilers = new HashMap<String, TemplateCompiler>();
+    Map<String, TemplateCompiler> inlineCompilers = new HashMap<>();
     JexlExpressionCompiler expressionCompiler = new JexlExpressionCompiler();
     inlineCompilers.put("text", new TextTemplateCompiler(expressionCompiler));
     TemplateCompiler engine = new HTMLTemplateCompiler(expressionCompiler, inlineCompilers);
@@ -130,9 +130,9 @@ public class HTMLTemplatingTest {
         HTMLTemplatingTest.readTemplate("META-INF/test1.html"),
         new ParserConfiguration(this.getClass().getClassLoader()));
     OutputStreamWriter writer = new OutputStreamWriter(System.out);
-    HashMap<String, Object> vars = new HashMap<String, Object>();
+    HashMap<String, Object> vars = new HashMap<>();
 
-    List<User> users = new LinkedList<User>();
+    List<User> users = new LinkedList<>();
     users.add(new User(0, "Niels", "Holgerson"));
     users.add(new User(1, "B", "Zs"));
 
@@ -238,14 +238,14 @@ public class HTMLTemplatingTest {
   public void testFull() {
     JexlExpressionCompiler expressionCompiler = new JexlExpressionCompiler();
 
-    Map<String, TemplateCompiler> inlineCompilers = new HashMap<String, TemplateCompiler>();
+    Map<String, TemplateCompiler> inlineCompilers = new HashMap<>();
     inlineCompilers.put("text", new TextTemplateCompiler(expressionCompiler));
 
     TemplateCompiler engine = new HTMLTemplateCompiler(expressionCompiler, inlineCompilers);
 
     ParserConfiguration parserConfiguration = new ParserConfiguration(this.getClass()
         .getClassLoader());
-    Map<String, Class<?>> variableTypes = new HashMap<String, Class<?>>();
+    Map<String, Class<?>> variableTypes = new HashMap<>();
     variableTypes.put("users", List.class);
     variableTypes.put("user", User.class);
     variableTypes.put("rowId", Integer.class);
@@ -259,9 +259,9 @@ public class HTMLTemplatingTest {
     // Writer writer = new OutputStreamWriter(System.out);
     final Writer writer = new NullWriter();
 
-    final HashMap<String, Object> vars = new HashMap<String, Object>();
+    final HashMap<String, Object> vars = new HashMap<>();
 
-    List<User> users = new LinkedList<User>();
+    List<User> users = new LinkedList<>();
     users.add(new User(0, "Niels", "Holgerson"));
     users.add(new User(1, "B", "Zs"));
 
@@ -355,6 +355,20 @@ public class HTMLTemplatingTest {
   }
 
   @Test
+  public void testNotEscapingConstantAttributeInEHTNode() {
+    CompiledTemplate compiledTemplate =
+        createTestEngine().compile(
+            "<e const=\"&lt;a&gt;\" data-eht-attr-dyn1=\"'&lt;b'\" data-eht-attr-dyn2=\"var1\" />",
+            createTestParserConfiguration());
+
+    StringWriter sw = new StringWriter();
+    Map<String, Object> vars = new HashMap<>();
+    vars.put("var1", "<c");
+    compiledTemplate.render(sw, vars);
+    Assert.assertEquals("<e const=\"&lt;a&gt;\" dyn1=\"&lt;b\" dyn2=\"&lt;c\" />", sw.toString());
+  }
+
+  @Test
   public void testRootFragmentId() {
     try {
       createTestEngine().compile("<test data-eht-fragment=\"'root'\" />",
@@ -392,7 +406,7 @@ public class HTMLTemplatingTest {
         HTMLTemplateCompiler.class.getClassLoader()));
 
     final StringWriter stringWriter = new StringWriter();
-    Map<String, Object> vars = new HashMap<String, Object>();
+    Map<String, Object> vars = new HashMap<>();
     vars.put("appender", new Runnable() {
 
       @Override
