@@ -21,6 +21,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -31,6 +32,7 @@ import org.apache.commons.jexl2.JexlException;
 import org.everit.expression.ParserConfiguration;
 import org.everit.expression.jexl.JexlExpressionCompiler;
 import org.everit.templating.CompiledTemplate;
+import org.everit.templating.FragmentNotFoundException;
 import org.everit.templating.TemplateCompiler;
 import org.everit.templating.TemplateContext;
 import org.everit.templating.html.HTMLTemplateCompiler;
@@ -123,31 +125,6 @@ public class HTMLTemplatingTest {
   }
 
   @Test
-  public void testBookmark() {
-    TemplateCompiler engine = createTestEngine();
-
-    CompiledTemplate compiledTemplate = engine.compile(
-        HTMLTemplatingTest.readTemplate("META-INF/test1.html"),
-        new ParserConfiguration(this.getClass().getClassLoader()));
-    OutputStreamWriter writer = new OutputStreamWriter(System.out);
-    HashMap<String, Object> vars = new HashMap<>();
-
-    List<User> users = new LinkedList<>();
-    users.add(new User(0, "Niels", "Holgerson"));
-    users.add(new User(1, "B", "Zs"));
-
-    vars.put("users", users);
-
-    compiledTemplate.render(writer, vars, "bookmark1");
-
-    try {
-      writer.flush();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  @Test
   public void testDuplicateAttribute() {
     try {
       createTestEngine().compile("<test id='' id='' data-eht-attr-id='' />",
@@ -231,6 +208,31 @@ public class HTMLTemplatingTest {
       Assert.fail("Exception should have been thrown");
     } catch (JexlException e) {
       Assert.assertEquals("@1:9 parsing error near '... st\" : \"tes ...'", e.getMessage());
+    }
+  }
+
+  @Test
+  public void testFragment() {
+    TemplateCompiler engine = createTestEngine();
+
+    CompiledTemplate compiledTemplate = engine.compile(
+        HTMLTemplatingTest.readTemplate("META-INF/test1.html"),
+        new ParserConfiguration(this.getClass().getClassLoader()));
+    OutputStreamWriter writer = new OutputStreamWriter(System.out);
+    HashMap<String, Object> vars = new HashMap<>();
+
+    List<User> users = new LinkedList<>();
+    users.add(new User(0, "Niels", "Holgerson"));
+    users.add(new User(1, "B", "Zs"));
+
+    vars.put("users", users);
+
+    compiledTemplate.render(writer, vars, "fragment1");
+
+    try {
+      writer.flush();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
   }
 
@@ -352,6 +354,15 @@ public class HTMLTemplatingTest {
         .render(writer, new HashMap<String, Object>());
 
     Assert.assertEquals(template, writer.toString());
+  }
+
+  @Test(expected = FragmentNotFoundException.class)
+  public void testNonExistentFragment() {
+    CompiledTemplate compiledTemplate =
+        createTestEngine().compile("<a>", createTestParserConfiguration());
+
+    Map<String, Object> vars = Collections.emptyMap();
+    compiledTemplate.render(new StringWriter(), vars, "nonExistentFragment");
   }
 
   @Test

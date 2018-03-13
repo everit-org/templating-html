@@ -19,6 +19,7 @@ import java.io.Writer;
 import java.util.Map;
 
 import org.everit.templating.CompiledTemplate;
+import org.everit.templating.FragmentNotFoundException;
 import org.everit.templating.TemplateConstants;
 import org.everit.templating.util.InheritantMap;
 
@@ -49,11 +50,12 @@ public class CompiledTemplateImpl implements CompiledTemplate {
     } else {
       parentNode = rootNode.getFragment(fragmentId);
       if (parentNode == null) {
-        return;
+        throw new FragmentNotFoundException(
+            "Could not find fragment [" + fragmentId + "] in HTML template");
       }
     }
 
-    InheritantMap<String, Object> scopedVars = new InheritantMap<String, Object>(vars, false);
+    InheritantMap<String, Object> scopedVars = new InheritantMap<>(vars, false);
     TemplateContextImpl templateContext = new TemplateContextImpl(this, evaluatedBookmark,
         scopedVars, writer);
     scopedVars.putWithoutChecks(TemplateConstants.VAR_TEMPLATE_CONTEXT, templateContext);
